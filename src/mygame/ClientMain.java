@@ -4,6 +4,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.network.Client;
+import com.jme3.network.ClientStateListener;
 import com.jme3.network.ClientStateListener.DisconnectInfo;
 import com.jme3.network.Message;
 import com.jme3.network.Network;
@@ -20,6 +21,7 @@ import java.util.logging.Level;
  * @author Mike
  */
 public class ClientMain extends SimpleApplication
+implements ClientStateListener
 {
     private Client myClient;
     
@@ -47,14 +49,20 @@ public class ClientMain extends SimpleApplication
 
         myClient.addMessageListener(new ClientListener(this, myClient),
                 GreetingMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                CubeMessage.class);
+        
+        // Message to send to the server.
         Message message = new GreetingMessage("Hi Server! "
                 + "Do you hear me?");
         myClient.send(message);
         
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                CubeMessage.class);
+        attachCube("One Cube"); // attaches a cube to the spatial
         
-        attachCube("One Cube");
+        /* example for client-server communication that changes the scene graph */          
+        Message m = new CubeMessage();                                                      // doesn't initialise cubemessage colour variable
+        //Message m = new CubeMessage(ColorRGBA.randomColor());                             // trying with colour initialised
+        myClient.send(m);
     }
     
     /* Add some demo content */
@@ -88,13 +96,19 @@ public class ClientMain extends SimpleApplication
     }
     
     /** Specify what happens when this client connects to server */
-    public void clientConnected(Client client) {
-        /* example for client-server communication that changes the scene graph */
-        Message m = new CubeMessage();
-        myClient.send(m);        
+    public void clientConnected(Client client) // not firing
+    {
+        System.out.println("Client #" + client.getId() + " is ready.");
+        
+//        /* example for client-server communication that changes the scene graph */          // not working
+//        Message m = new CubeMessage();                                                      // doesn't initialise cubemessage colour variable
+//        //Message m = new CubeMessage(ColorRGBA.randomColor());                               // trying with colour initialised
+//        myClient.send(m);        
     }
     
     /** Specify what happens when this client disconnects from server */
-    public void clientDisconnected(Client client, DisconnectInfo info) {
+    public void clientDisconnected(Client client, DisconnectInfo info) // not firing
+    {
+        System.out.println("Client #" + client.getId() + " has left.");
     }
 }

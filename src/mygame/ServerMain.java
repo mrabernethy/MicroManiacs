@@ -1,6 +1,7 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.network.ConnectionListener;
 import com.jme3.network.HostedConnection;
 import com.jme3.network.Network;
 import com.jme3.network.Server;
@@ -14,10 +15,13 @@ import java.util.logging.Level;
  * test
  * @author normenhansen
  */
-public class ServerMain extends SimpleApplication 
+public class ServerMain extends SimpleApplication
+implements ConnectionListener
 {
     private Server myServer;
-
+    int connections = 0;
+    int connectionsOld = -1;
+    
     public static void main(String[] args) 
     {
         java.util.logging.Logger.getLogger("").setLevel
@@ -39,8 +43,8 @@ public class ServerMain extends SimpleApplication
             
         }
         
-        Serializer.registerClass(GreetingMessage.class); // register the message class
-        Serializer.registerClass(CubeMessage.class);
+        Serializer.registerClass(GreetingMessage.class); // register the greeting message class
+        Serializer.registerClass(CubeMessage.class); //register the cube message class
         
         myServer.addMessageListener(new ServerListener(this, myServer),
                 CubeMessage.class);
@@ -64,8 +68,11 @@ public class ServerMain extends SimpleApplication
     @Override
     public void update()
     {
-        System.out.println("Server Connections: " 
-                + myServer.getConnections().size());
+        connections = myServer.getConnections().size();
+        if (connectionsOld != connections) {
+            System.out.println("Server connections: " + connections);
+            connectionsOld = connections;
+        }
     }
     
 //    @Override
@@ -89,12 +96,14 @@ public class ServerMain extends SimpleApplication
     
     /** Specify what happens when a client connects to this server */
     public void connectionAdded(Server server, HostedConnection client) {
-         
+         System.out.println("Server knows that client #"
+                + client.getId() + " is ready.");
+        client.close("");
     }
     
     /** Specify what happens when a client disconnects from this server */
     public void connectionRemoved(Server server, HostedConnection client) {
- 
-
+        System.out.println("Server knows that client #"
+                + client.getId() + " has left.");
     }
 }

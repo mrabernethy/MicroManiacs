@@ -11,7 +11,7 @@ import com.jme3.network.serializing.Serializable;
 @Serializable(id=0)
 public class CubeMessage extends AbstractMessage
 {
-    private ColorRGBA colour; // init your message data
+    private ColorRGBA colour = ColorRGBA.Blue; // init your message data
     
     public CubeMessage() {} // empty default constructor
     public CubeMessage(ColorRGBA colour) 
