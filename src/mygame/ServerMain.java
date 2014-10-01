@@ -50,8 +50,10 @@ implements ConnectionListener
                 CubeMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
             GreetingMessage.class);
+        //myServer.addConnectionListener(this);
         
         
+        // Extra message sending info...
 //        // The server can also send a message to all clients instead of just to one. Create
 //        // your message as before, and broadcast it to all clients using the following line:
 //        myServer.broadcast(message);

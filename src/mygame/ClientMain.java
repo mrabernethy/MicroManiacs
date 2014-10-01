@@ -15,6 +15,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.system.JmeContext;
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -51,6 +52,7 @@ implements ClientStateListener
                 GreetingMessage.class);
         myClient.addMessageListener(new ClientListener(this, myClient),
                 CubeMessage.class);
+        //myClient.addClientStateListener(this);
         
         // Message to send to the server.
         Message message = new GreetingMessage("Hi Server! "
@@ -79,6 +81,8 @@ implements ClientStateListener
     @Override
     public void simpleUpdate(float tpf) {
         //TODO: add update code
+        
+        
     }
 
     @Override
@@ -96,9 +100,11 @@ implements ClientStateListener
     }
     
     /** Specify what happens when this client connects to server */
-    public void clientConnected(Client client) // not firing
+    public void clientConnected(Client client) 
     {
         System.out.println("Client #" + client.getId() + " is ready.");
+        
+        
         
 //        /* example for client-server communication that changes the scene graph */          // not working
 //        Message m = new CubeMessage();                                                      // doesn't initialise cubemessage colour variable

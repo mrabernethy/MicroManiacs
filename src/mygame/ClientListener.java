@@ -45,8 +45,9 @@ implements MessageListener<Client>
         {
             final CubeMessage cubeMessage = (CubeMessage) message;
             
-            // modifications to the scene graph should be wrapped in a Callable()
-            // and enqueued
+            // Modifications to the scene graph should be wrapped in a Callable()
+            // and enqueued. Enqueuing the Callable ensures that the desired modification 
+            // is performed in sync with other threads. 
             app.enqueue(new Callable() {
                 public Void call() {
                     /* change something in the scene graph from here */
