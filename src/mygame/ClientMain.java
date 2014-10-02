@@ -13,8 +13,15 @@ import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Mesh;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Quad;
 import com.jme3.system.JmeContext;
+import com.jme3.ui.Picture;
+import engine.sprites.Sprite;
+import engine.sprites.SpriteImage;
+import engine.sprites.SpriteManager;
+import engine.sprites.SpriteMesh;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -27,10 +34,12 @@ import java.util.logging.Logger;
 public class ClientMain extends SimpleApplication
 implements ClientStateListener
 {
+    private SpriteManager spriteManager;
+    
     private Client myClient;
     private Vector3f lastSentPosition;
     
-    private HashMap<Integer, Geometry> players = new HashMap();
+    private HashMap<Integer, Sprite> players = new HashMap();
     
     
     public static void main(String[] args) 
@@ -43,6 +52,9 @@ implements ClientStateListener
     @Override
     public void simpleInitApp() 
     { 
+        spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
+        getStateManager().attach(spriteManager);
+        
         try {
             myClient = Network.connectToServer (Globals.NAME,
                     Globals.VERSION, Globals.DEFAULT_SERVER, 
@@ -90,14 +102,12 @@ implements ClientStateListener
     
     public void addPlayer(int id)
     {
-        Box box = new Box(0.1f,0.1f,0.1f);
-        Geometry geom = new Geometry("" + id, box);
-        Material mat = new Material(assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Green);
-        geom.setMaterial(mat);
-        rootNode.attachChild(geom);
-        players.put(id, geom);
+        
+        SpriteImage spriteImage = spriteManager.createSpriteImage("smile.jpg", false);
+        Sprite sprite = new Sprite(spriteImage);
+        sprite.setSize(0.2f);
+
+        players.put(id, sprite);
     }
     
     public boolean playerExists(int id)
@@ -107,13 +117,12 @@ implements ClientStateListener
     
     public void movePlayer(int id, Vector3f position)
     {
-        players.get(id).center();
-        players.get(id).move(position);
+        players.get(id).setPosition(position);
     }
     
     public void removePlayer(int id)
     {
-        rootNode.getChild("" + id).removeFromParent();
+        players.remove(id);
     }
 
     @Override
