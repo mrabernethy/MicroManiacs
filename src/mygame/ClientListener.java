@@ -64,7 +64,22 @@ implements MessageListener<Client>
         
         if(message instanceof ClientMessage)
         {
-            ClientMessage clientMessage = (ClientMessage) message;
+            final ClientMessage clientMessage = (ClientMessage) message;
+            
+            app.enqueue(new Callable() {
+                public Void call()
+                {
+                    if(!app.playerExists(clientMessage.getClientID()))
+                    {
+                        app.addPlayer(clientMessage.getClientID());
+                    }
+            
+                    app.movePlayer(clientMessage.getClientID(), clientMessage.getPos());
+                    
+                    return null;
+                }
+            });
+           
             
             System.out.println("Client #" + clientMessage.getClientID() + " sent the position " + clientMessage.getPos().toString());
         }

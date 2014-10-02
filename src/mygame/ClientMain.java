@@ -90,7 +90,7 @@ implements ClientStateListener
     
     public void addPlayer(int id)
     {
-        Box box = new Box(0.5f,0.5f,0.5f);
+        Box box = new Box(0.1f,0.1f,0.1f);
         Geometry geom = new Geometry("" + id, box);
         Material mat = new Material(assetManager,
                 "Common/MatDefs/Misc/Unshaded.j3md");
