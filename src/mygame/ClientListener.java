@@ -2,6 +2,7 @@ package mygame;
 
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
@@ -59,6 +60,13 @@ implements MessageListener<Client>
                     return null;
                 }
             });
+        }
+        
+        if(message instanceof ClientMessage)
+        {
+            ClientMessage clientMessage = (ClientMessage) message;
+            
+            System.out.println("Client #" + clientMessage.getClientID() + " sent the position " + clientMessage.getPos().toString());
         }
     }
 }

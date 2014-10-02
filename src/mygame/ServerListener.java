@@ -57,6 +57,17 @@ implements MessageListener<HostedConnection>
             
             // TODO: try to send new colour to only one client
         }
+        
+        if(message instanceof ClientMessage)
+        {
+            ClientMessage clientMessage = (ClientMessage) message;
+            System.out.println("Server recieved position " + clientMessage.getPos().toString() + " from client #" + clientMessage.getClientID());
+            
+            for(HostedConnection h : server.getConnections())
+            {
+                h.send(clientMessage);
+            }
+        }
     }
     
 }
