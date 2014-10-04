@@ -45,19 +45,6 @@ implements MessageListener<HostedConnection>
             source.send(greetingMessage);                                       // returns the message
         }
         
-        // When the server receives a CubeMessage, it picks a colour, 
-        // and broadcasts the CubeMessage to all clients.
-        if (message instanceof CubeMessage) 
-        {
-            CubeMessage cubeMessage = (CubeMessage) message;                    // not used
-            System.out.println("The server received the CubeMessage "
-                    + cubeMessage.getColour() + " from client #" + source.getId());
-            /* tell all clients! */                                             // is this the right spot? should the listener be sending messages?
-            server.broadcast(new CubeMessage(ColorRGBA.randomColor()));         // should send random colour message to all clients
-            
-            // TODO: try to send new colour to only one client
-        }
-        
         if(message instanceof ClientMessage)
         {
             ClientMessage clientMessage = (ClientMessage) message;
@@ -65,7 +52,8 @@ implements MessageListener<HostedConnection>
             
             for(HostedConnection h : server.getConnections())
             {
-                h.send(clientMessage);
+                if(h.getId() != clientMessage.getClientID())
+                    h.send(clientMessage);
             }
         }
     }

@@ -45,10 +45,7 @@ implements ConnectionListener
         
         Serializer.registerClass(ClientMessage.class);
         Serializer.registerClass(GreetingMessage.class); // register the greeting message class
-        Serializer.registerClass(CubeMessage.class); //register the cube message class
-        
-        myServer.addMessageListener(new ServerListener(this, myServer),
-                CubeMessage.class);
+
         myServer.addMessageListener(new ServerListener(this, myServer),
                 GreetingMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),

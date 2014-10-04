@@ -41,27 +41,6 @@ implements MessageListener<Client>
                     + greetingMessage.getGreeting() + "'");
         }
         
-        // Change the colour of the attached cube.
-        if (message instanceof CubeMessage) 
-        {
-            final CubeMessage cubeMessage = (CubeMessage) message;
-            
-            // Modifications to the scene graph should be wrapped in a Callable()
-            // and enqueued. Enqueuing the Callable ensures that the desired modification 
-            // is performed in sync with other threads. 
-            app.enqueue(new Callable() {
-                public Void call() {
-                    /* change something in the scene graph from here */
-                    Material mat = new Material(app.getAssetManager(),
-                        "Common/MatDefs/Misc/Unshaded.j3md");
-                    mat.setColor("Color", cubeMessage.getColour());
-                    // only single spacial, should call by name when more
-                    app.getRootNode().getChild(0).setMaterial(mat);
-                    return null;
-                }
-            });
-        }
-        
         if(message instanceof ClientMessage)
         {
             final ClientMessage clientMessage = (ClientMessage) message;
