@@ -36,8 +36,7 @@ import java.util.logging.Level;
  *
  * @author Mike
  */
-public class ClientMain extends SimpleApplication
-implements ClientStateListener
+public class ClientMain extends SimpleApplication //implements ClientStateListener
 {
     private SpriteManager spriteManager;
     
@@ -103,7 +102,8 @@ implements ClientStateListener
         // TODO: add space mapping to listener
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
-        inputManager.addListener(analogListener, new String[]{MAPPING_ROTATE});
+        inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
+            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_ROTATE});
         
         spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
         getStateManager().attach(spriteManager);
@@ -221,69 +221,8 @@ implements ClientStateListener
     }
 
     
-    // use for shoot and click events
-    private ActionListener actionListener = new ActionListener() {
-        public void onAction(String name, boolean keyPressed, float tpf) {
-        /** TODO: test for mapping names and implement actions */
-            System.out.println("Mapping detected (discrete): "+ name);
-            player = players.get(myClient.getId());                   // made player a class variable
-            
-            // LEFT
-            if(name.equals(MAPPING_LEFT) && keyPressed)
-            {
-                // Set player left velocity
-                player.setVelocity(player.getVelocity().setX(-2));
-                
-            }
-            else if(name.equals(MAPPING_LEFT) && !keyPressed)
-            {
-                // Stop player left velocity
-                player.setVelocity(player.getVelocity().setX(0));
-            }
-            
-            // RIGHT
-            if(name.equals(MAPPING_RIGHT) && keyPressed)
-            {
-                // Set player right velocity
-                player.setVelocity(player.getVelocity().setX(2));
-                
-            }
-            else if(name.equals(MAPPING_RIGHT) && !keyPressed)
-            {
-                // Stop player right velocity
-                player.setVelocity(player.getVelocity().setX(0));
-            }
-            
-            // UP
-            if(name.equals(MAPPING_UP) && keyPressed)
-            {
-                // Set player up velocity
-                player.setVelocity(player.getVelocity().setY(2));
-                
-            }
-            else if(name.equals(MAPPING_UP) && !keyPressed)
-            {
-                // Stop player up velocity
-                player.setVelocity(player.getVelocity().setY(0));
-            }
-            
-            // DOWN
-            if(name.equals(MAPPING_DOWN) && keyPressed)
-            {
-                // Set player down velocity
-                player.setVelocity(player.getVelocity().setY(-2));
-            }
-            else if(name.equals(MAPPING_DOWN) && !keyPressed)
-            {
-                // Stop player down velocity
-                player.setVelocity(player.getVelocity().setY(0));
-            }
-            
-        }
-    };
-    
+    // use for mouse rotation and maybe vehicle acceleration
     private AnalogListener analogListener = new AnalogListener() {
-
         public void onAnalog(String name, float intensity, float tpf) {
             System.out.println("Mapping detected (analog): "+ name + " " + intensity );
             
@@ -291,29 +230,72 @@ implements ClientStateListener
                 // TODO: add rotate functin to player, rotate the sprite
                 // player.rotate(0, intensity * 10f, 0);
             } 
+            
             // Tried to get it to work with intensity but no good
-//            else if (name.equals(MAPPING_UP))
-//            {
-//                // Set player up velocity
-//                player.setVelocity(player.getVelocity().setY(1000f*intensity));
-//            }
-//            else if (name.equals(MAPPING_DOWN))
-//            {
-//                // Set player up velocity
-//                player.setVelocity(player.getVelocity().setY(-1000f*intensity));
-//            }
-//            else if (name.equals(MAPPING_LEFT))
-//            {
-//                // Set player up velocity
-//                player.setVelocity(player.getVelocity().setX(-1000f*intensity));
-//            }
-//            else if (name.equals(MAPPING_RIGHT))
-//            {
-//                // Set player up velocity
-//                player.setVelocity(player.getVelocity().setX(1000f*intensity));
-//            }
+            if (name.equals(MAPPING_UP))
+            {
+                // Set player up velocity
+                player.setVelocity(player.getVelocity().setY(2));
+            }
+            
+            
+            if (name.equals(MAPPING_DOWN))
+            {
+                // Set player down velocity
+                player.setVelocity(player.getVelocity().setY(-2));
+            }
+            
+            
+            if (name.equals(MAPPING_LEFT))
+            {
+                // Set player left velocity
+                player.setVelocity(player.getVelocity().setX(-2));
+            }
+            
+            
+            if (name.equals(MAPPING_RIGHT))
+            {
+                // Set player right velocity
+                player.setVelocity(player.getVelocity().setX(2));
+            }
+            
         }
     };
+    
+    // use for shoot and click events
+    private ActionListener actionListener = new ActionListener() {
+        public void onAction(String name, boolean keyPressed, float tpf) {
+        /** TODO: test for mapping names and implement actions */
+            System.out.println("Mapping detected (discrete): "+ name);
+            player = players.get(myClient.getId());                   // made player a class variable
+            
+            // UP
+            if(name.equals(MAPPING_UP) && !keyPressed)
+            {
+                // Set player left velocity
+                player.setVelocity(player.getVelocity().setY(0));
+            }
+            // DOWN
+            if(name.equals(MAPPING_DOWN) && !keyPressed)
+            {
+                // Set player right velocity
+                player.setVelocity(player.getVelocity().setY(0));
+            }
+            // LEFT
+            if(name.equals(MAPPING_LEFT) && !keyPressed)
+            {
+                // Set player up velocity
+                player.setVelocity(player.getVelocity().setX(0));
+            }
+            // RIGHT
+            if(name.equals(MAPPING_RIGHT) && !keyPressed)
+            {
+                // Set player down velocity
+                player.setVelocity(player.getVelocity().setX(0));
+            }
+        }
+    };
+
     
     /** Specify what happens when this client connects to server */
     public void clientConnected(Client client) 
