@@ -1,6 +1,9 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.asset.AssetInfo;
+import com.jme3.cursors.plugins.CursorLoader;
+import com.jme3.cursors.plugins.JmeCursor;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
@@ -12,23 +15,37 @@ import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
+import com.jme3.math.Plane;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Ray;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.ClientStateListener;
 import com.jme3.network.ClientStateListener.DisconnectInfo;
 import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
+import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Quad;
 import com.jme3.system.JmeContext;
+import com.jme3.texture.Image;
 import com.jme3.texture.Texture;
+import com.jme3.texture.Texture2D;
+import com.jme3.util.BufferUtils;
 import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
 import engine.sprites.SpriteManager;
 import engine.sprites.SpriteMesh;
 import entities.Player;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -39,9 +56,12 @@ import java.util.logging.Level;
 public class ClientMain extends SimpleApplication //implements ClientStateListener
 {
     private SpriteManager spriteManager;
-    
+//    Camera cam;
+//    ChaseCamera chaseCamera;
     private Client myClient;
     private Vector3f lastSentPosition;
+    
+    private Geometry rotBox; // testing rotation of a quad attached to a geometry
     
     // Chase camera
     //private ChaseCamera chaseCamera;
@@ -59,8 +79,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private final static Trigger TRIGGER_RIGHT = new KeyTrigger(KeyInput.KEY_RIGHT);
     // TODO: add shoot 
     //private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
-    private final static Trigger TRIGGER_ROTATE_X = new MouseAxisTrigger(MouseInput.AXIS_X, true);
-    private final static Trigger TRIGGER_ROTATE_Y = new MouseAxisTrigger(MouseInput.AXIS_Y, true);
+    private final static Trigger TRIGGER_ROTATE_X_LEFT = new MouseAxisTrigger(MouseInput.AXIS_X, true);
+    private final static Trigger TRIGGER_ROTATE_X_RIGHT = new MouseAxisTrigger(MouseInput.AXIS_Y, false);
+    private final static Trigger TRIGGER_ROTATE_Y_DOWN = new MouseAxisTrigger(MouseInput.AXIS_Y, true);
+    private final static Trigger TRIGGER_ROTATE_Y_UP = new MouseAxisTrigger(MouseInput.AXIS_Y, false);
     
     private final static String  MAPPING_UP = "Up";
     private final static String  MAPPING_DOWN = "Down";
@@ -90,7 +112,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         }
         
         // Add the chase camera
-        //chaseCamera = new ChaseCamera(Camera cam);
+//        cam = this.getCamera();
+//        chaseCamera = new ChaseCamera(cam);
         
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
@@ -98,12 +121,18 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         inputManager.addMapping(MAPPING_LEFT, TRIGGER_A, TRIGGER_LEFT);
         inputManager.addMapping(MAPPING_RIGHT, TRIGGER_D, TRIGGER_RIGHT);
         //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
-        inputManager.addMapping(MAPPING_ROTATE, TRIGGER_ROTATE_X, TRIGGER_ROTATE_Y);
+        inputManager.addMapping(MAPPING_ROTATE, TRIGGER_ROTATE_X_LEFT, TRIGGER_ROTATE_X_RIGHT, TRIGGER_ROTATE_Y_DOWN, TRIGGER_ROTATE_Y_UP);
         // TODO: add space mapping to listener
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT, MAPPING_ROTATE});
+        
+        // Set cursor visible
+        inputManager.setCursorVisible(true);
+//        JmeCursor c = new JmeCursor();
+//        IntBuffer image = new IntBuffer
+//        inputManager.setMouseCursor(JmeCursor.class.);
         
         spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
         getStateManager().attach(spriteManager);
@@ -124,16 +153,22 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         myClient.send(new ClientMessage(this.cam.getLocation(), myClient.getId()));
         lastSentPosition = new Vector3f(this.cam.getLocation());
         
-        attachCube(); // attaches a cube to the spatial
+        //attachCube(); // attaches a cube to the spatial
+        
+        attachRotatingBox(); // testing box for player
         
         // TODO: attach the world
         //attachWorld();
         
+        // Stop the camera moving
         this.flyCam.setEnabled(false);
+        
         
         // Add player
         addPlayer(myClient.getId());
     }
+    
+    
     
     /* Add some demo content */
     // Currently used for the background and set to white.
@@ -147,7 +182,32 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         geom.setMaterial(mat);
         geom.setLocalScale(3);
         geom.setLocalTranslation(new Vector3f(0,0,-0.5f));
+        //geom.addControl(chaseCamera);
         rootNode.attachChild(geom);
+    }
+    
+    /**
+     * Attaches a box that rotates with the mouse cursor.
+     * 
+     */
+    private void attachRotatingBox()
+    {
+        
+        // wouldn't behave unless it had a z value greater than 0
+        Box b = new Box(0.5f,0.5f,0.5f);
+        rotBox = new Geometry("Box", b);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        rotBox.setMaterial(mat);
+        rootNode.attachChild(rotBox);
+        
+        //Quad quad = new Quad(0.5f, 0.5f);
+        
+        //Texture tex = assetManager.loadTexture("Textures/smile.jpg");
+        //smileMat.setTexture("Texture", assetManager.loadTexture("Textures/smile.jpg"));
+        
+        //rotQuad.setLocalTranslation(-3, -3, 0);
+        
+        //rotQuad.move(0, 1, 0);
     }
     
     //Doesn't work
@@ -228,7 +288,24 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             
             if (name.equals(MAPPING_ROTATE)) {
                 // TODO: add rotate functin to player, rotate the sprite
-                // player.rotate(0, intensity * 10f, 0);
+
+                
+                
+                // From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
+                Vector2f mousePositionScreen = inputManager.getCursorPosition();
+                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
+                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
+                Ray ray = new Ray(mousePosition3d, dir);
+                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
+                Vector3f mousePositionWorld = new Vector3f();
+                ray.intersectsWherePlane(plane, mousePositionWorld);
+                mousePositionWorld.z = 0;
+
+                Quaternion rotation = new Quaternion();
+                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
+                
+                rotBox.setLocalRotation(rotation);
+                
             } 
             
             // Tried to get it to work with intensity but no good
@@ -236,6 +313,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player up velocity
                 player.setVelocity(player.getVelocity().setY(2));
+                
+                
             }
             
             
@@ -243,6 +322,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player down velocity
                 player.setVelocity(player.getVelocity().setY(-2));
+                
             }
             
             
