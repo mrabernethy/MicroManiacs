@@ -355,7 +355,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private AnalogListener analogListener = new AnalogListener() {
         public void onAnalog(String name, float intensity, float tpf) {
             System.out.println("Mapping detected (analog): "+ name + " " + intensity );
-            
+            // TODO: remove rotate mapping 
             if (name.equals(MAPPING_ROTATE)) {
                 // TODO: add rotate functin to player, rotate the sprite
 
