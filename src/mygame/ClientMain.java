@@ -4,6 +4,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.asset.AssetInfo;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.cursors.plugins.CursorLoader;
 import com.jme3.cursors.plugins.JmeCursor;
@@ -28,14 +29,18 @@ import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
 import engine.sprites.SpriteManager;
 import engine.sprites.SpriteMesh;
+import entities.Bullet;
 import entities.Player;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -63,6 +68,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
+    private List<Bullet> bullets = new ArrayList<Bullet>();
     
     private  Box    floor;
     
@@ -74,6 +80,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private final static Trigger TRIGGER_DOWN = new KeyTrigger(KeyInput.KEY_DOWN);
     private final static Trigger TRIGGER_LEFT = new KeyTrigger(KeyInput.KEY_LEFT);
     private final static Trigger TRIGGER_RIGHT = new KeyTrigger(KeyInput.KEY_RIGHT);
+    private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
     // TODO: add shoot 
     //private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
     private final static Trigger TRIGGER_ROTATE_X_LEFT = new MouseAxisTrigger(MouseInput.AXIS_X, true);
@@ -87,6 +94,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private final static String  MAPPING_RIGHT = "Right";
     //private final static String  MAPPING_SHOOT = "Shoot";
     private final static String  MAPPING_ROTATE = "Rotate";
+    private final static String MAPPING_SPACE = "Space";
     
     
     public static void main(String[] args) 
@@ -119,13 +127,14 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         inputManager.addMapping(MAPPING_DOWN, TRIGGER_S, TRIGGER_DOWN);
         inputManager.addMapping(MAPPING_LEFT, TRIGGER_A, TRIGGER_LEFT);
         inputManager.addMapping(MAPPING_RIGHT, TRIGGER_D, TRIGGER_RIGHT);
+        inputManager.addMapping(MAPPING_SPACE, TRIGGER_SPACE);
         //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
         inputManager.addMapping(MAPPING_ROTATE, TRIGGER_ROTATE_X_LEFT, TRIGGER_ROTATE_X_RIGHT, TRIGGER_ROTATE_Y_DOWN, TRIGGER_ROTATE_Y_UP);
         // TODO: add space mapping to listener
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT});
+            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_SPACE});
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_ROTATE});
+            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_ROTATE, MAPPING_SPACE});
         
         // Set cursor visible
         inputManager.setCursorVisible(true);
@@ -263,6 +272,32 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         
         bulletAppState.getPhysicsSpace().add(playerPhys);
         rootNode.attachChild(geom);
+    }
+    
+    public void shoot(int id) {
+        
+        Vector3f bPos = new Vector3f(players.get(myClient.getId()).getPosition());
+        bPos.setX(players.get(myClient.getId()).getPosition().getX() + 0.5f);
+        Bullet b = new Bullet(bPos);
+        
+        String idStr = "Bullet " + Integer.toString(id);
+        Sphere s = new Sphere();
+        Geometry geom = new Geometry(idStr, s);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        //mat.setColor(idStr, ColorRGBA.Blue);
+        System.out.println(mat.getParams());
+        
+        geom.setMaterial(mat);
+        
+        SphereCollisionShape scs = new SphereCollisionShape();
+        RigidBodyControl bulletPhys = new RigidBodyControl(scs);
+        geom.addControl(bulletPhys);
+        
+        b.setGeometry(geom);
+        bullets.add(b);
+        bulletAppState.getPhysicsSpace().add(bulletPhys);
+        rootNode.attachChild(geom);
+        
     }
     
     public boolean playerExists(int id)
@@ -438,6 +473,12 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                 Vector3f v = player.getPosition().clone();
                 v.x+=0.01f;
                 player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
+            }
+            
+            if (name.equals(MAPPING_SPACE))
+            {
+                
+                shoot(bullets.size() + 1);
             }
             
         }
