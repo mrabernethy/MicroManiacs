@@ -215,11 +215,6 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     
     public void addPlayer(int id)
     {
-        //SpriteImage spriteImage = spriteManager.createSpriteImage("smile.jpg", false);
-        
-        //Player p = new Player(new Vector3f(0,0,0), spriteImage);
-        //p.getSprite().setSize(0.4f);
-        Player p = new Player(new Vector3f(0,0,0));
         String idStr = "Player " + Integer.toString(id);
         
         Box b = new Box(0.5f,0.5f,0.1f);
@@ -227,11 +222,9 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         geom.setMaterial(mat);
         
-        p.setGeometry(geom);
-        
-        players.put(id, p);
-        
+        Player p = new Player(new Vector3f(0,0,0), geom);
         rootNode.attachChild(geom);
+        players.put(id, p);
     }
     
     public boolean playerExists(int id)
@@ -253,22 +246,22 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     
     public void collisionWithWall()
     {
-        topY = new Vector3f(players.get(myClient.getId()).getPosition());
+        topY = new Vector3f(player.getPosition());
         topY.setY(3.9f);
-        bottomY = new Vector3f(players.get(myClient.getId()).getPosition());
+        bottomY = new Vector3f(player.getPosition());
         bottomY.setY(-3.9f);
-        rightX = new Vector3f(players.get(myClient.getId()).getPosition());
+        rightX = new Vector3f(player.getPosition());
         rightX.setX(5.24f);
-        leftX = new Vector3f(players.get(myClient.getId()).getPosition());
+        leftX = new Vector3f(player.getPosition());
         leftX.setX(-5.24f);
-        if (players.get(myClient.getId()).getPosition().getY() > 3.9) {
-            players.get(myClient.getId()).setPosition(topY);
-        } else if (players.get(myClient.getId()).getPosition().getY() < -3.9) {
-            players.get(myClient.getId()).setPosition(bottomY);
-        } else if (players.get(myClient.getId()).getPosition().getX() > 5.24) {
-            players.get(myClient.getId()).setPosition(rightX);
-        } else if (players.get(myClient.getId()).getPosition().getX() < -5.24) {
-            players.get(myClient.getId()).setPosition(leftX);
+        if (player.getPosition().getY() > 3.9) {
+            player.setPosition(topY);
+        } else if (player.getPosition().getY() < -3.9) {
+            player.setPosition(bottomY);
+        } else if (player.getPosition().getX() > 5.24) {
+            player.setPosition(rightX);
+        } else if (player.getPosition().getX() < -5.24) {
+            player.setPosition(leftX);
         }
         
     }
@@ -292,7 +285,6 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
         float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
-        player.getGeometry().setLocalRotation(playerRotation);
         player.setRotation(playerRotation);
         
         collisionWithWall();
