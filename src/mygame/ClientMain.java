@@ -64,6 +64,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
     
+    private  Box    floor;
+    
     private final static Trigger TRIGGER_W = new KeyTrigger(KeyInput.KEY_W);
     private final static Trigger TRIGGER_S = new KeyTrigger(KeyInput.KEY_S);
     private final static Trigger TRIGGER_A = new KeyTrigger(KeyInput.KEY_A);
@@ -183,16 +185,31 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     // Currently used for the background and set to white.
     public void attachBackground() {
         
-        Box box = new Box(3,3,0);
-        Geometry geom = new Geometry("Cube", box);
-        Material mat = new Material(assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Gray);
-        geom.setMaterial(mat);
-        geom.setLocalScale(3);
-        geom.setLocalTranslation(new Vector3f(0,0,-0.5f));
-        //geom.addControl(chaseCamera);
-        rootNode.attachChild(geom);
+        /** Initialize the floor geometry */
+        floor = new Box(10f, 10f, 0);
+        floor.scaleTextureCoordinates(new Vector2f(3, 6));
+        Material floor_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        //floor_mat.setTexture("ColorMap", tex3);
+        Geometry floor_geo = new Geometry("Floor", floor);
+        floor_geo.setMaterial(floor_mat);
+        floor_geo.setLocalTranslation(0, 0, -0.1f);
+        this.rootNode.attachChild(floor_geo);
+        /* Make the floor physical with mass 0.0f! */
+        RigidBodyControl floor_phy = new RigidBodyControl(0.0f);
+        floor_geo.addControl(floor_phy);
+        bulletAppState.getPhysicsSpace().add(floor_phy);
+        
+        
+//        Box box = new Box(3,3,0);
+//        Geometry geom = new Geometry("Cube", box);
+//        Material mat = new Material(assetManager,
+//                "Common/MatDefs/Misc/Unshaded.j3md");
+//        mat.setColor("Color", ColorRGBA.Gray);
+//        geom.setMaterial(mat);
+//        geom.setLocalScale(3);
+//        geom.setLocalTranslation(new Vector3f(0,0,-0.5f));
+//        //geom.addControl(chaseCamera);
+//        rootNode.attachChild(geom);
     }
     
     /**
@@ -309,7 +326,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         player.getGeometry().setLocalRotation(playerRotation);
         player.setRotation(playerRotation);
         
-        collisionWithWall();
+        //collisionWithWall();
         // Send this players position every x movement distance
 //        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
 //        {
