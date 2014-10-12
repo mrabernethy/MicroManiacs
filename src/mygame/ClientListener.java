@@ -53,7 +53,7 @@ implements MessageListener<Client>
                         app.addPlayer(clientMessage.getClientID());
                     }
             
-                    app.movePlayer(clientMessage.getClientID(), clientMessage.getPos());
+                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getPos(), clientMessage.getQuat());
                     
                     return null;
                 }

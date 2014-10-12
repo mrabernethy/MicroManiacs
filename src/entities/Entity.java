@@ -4,6 +4,7 @@
  */
 package entities;
 
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
@@ -17,29 +18,31 @@ public abstract class Entity {
     private Vector3f position;
     private Vector3f velocity;
     
-    private Sprite sprite;
+    private Quaternion rotation;
+    
+    //private Sprite sprite;
     
     private boolean alive;
-    private float rotation;
     
-    public Entity(Vector3f position, SpriteImage spriteImage)
+    
+    public Entity(Vector3f position)                                    //, SpriteImage spriteImage)
     {
-        sprite = new Sprite(spriteImage);
-        sprite.setPosition(position);
+        //sprite = new Sprite(spriteImage);
+        //sprite.setPosition(position);
         this.position = position;
         this.velocity = new Vector3f();
     }
     
-    public Vector3f getPosition()
-    {
-        return this.position;
-    }
-    
-    public void setPosition(Vector3f position)
-    {
-        this.position = position;
-        sprite.setPosition(position);
-    }
+//    public Vector3f getPosition()
+//    {
+//        return this.position;
+//    }
+//    
+//    public void setPosition(Vector3f position)
+//    {
+//        this.position = position;
+//        //sprite.setPosition(position);
+//    }
     
     public void setVelocity(Vector3f velocity)
     {
@@ -51,21 +54,29 @@ public abstract class Entity {
         return this.velocity;
     }
     
-    public Sprite getSprite()
-    {
-        return sprite;
-    }
+//    public Sprite getSprite()
+//    {
+//        return sprite;
+//    }
     
-    public void update(float deltaTime)
-    {
-        Vector3f newPos = new Vector3f(position.x, position.y, position.z);
-        
-        newPos.x += deltaTime * velocity.x;
-        newPos.y += deltaTime * velocity.y;
-        newPos.z += deltaTime * velocity.z;
-        
-        setPosition(newPos);
-    }
+//    public void update(float deltaTime)
+//    {
+//        Vector3f newPos = new Vector3f(position.x, position.y, position.z);
+//        
+//        newPos.x += deltaTime * velocity.x;
+//        newPos.y += deltaTime * velocity.y;
+//        newPos.z += deltaTime * velocity.z;
+//        
+//        setPosition(newPos);
+//    }
     
-    
+//    public void setRotation(Quaternion rotation)
+//    {
+//        this.rotation = rotation;
+//    }
+//    
+//    public Quaternion getRotation()
+//    {
+//        return rotation;
+//    }
 }

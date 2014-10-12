@@ -150,22 +150,31 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
         
-        myClient.send(new ClientMessage(this.cam.getLocation(), myClient.getId()));
+        
+        
+        myClient.send(new ClientMessage(this.cam.getLocation(), this.cam.getRotation(), myClient.getId()));
         lastSentPosition = new Vector3f(this.cam.getLocation());
         
         //attachCube(); // attaches a cube to the spatial
         
-        attachRotatingBox(); // testing box for player
+        //attachRotatingBox(); // testing box for player
         
         // TODO: attach the world
         //attachWorld();
+        
+        // Add player
+        addPlayer(myClient.getId());
+        player = (players.get(myClient.getId()));
         
         // Stop the camera moving
         this.flyCam.setEnabled(false);
         
         
-        // Add player
-        addPlayer(myClient.getId());
+        
+        
+        
+        // TODO: add chase camera to this player
+        //player.addControl(chaseCamera);
     }
     
     
@@ -190,26 +199,18 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
      * Attaches a box that rotates with the mouse cursor.
      * 
      */
-    private void attachRotatingBox()
-    {
-        
-        // wouldn't behave unless it had a z value greater than 0
-        Box b = new Box(0.5f,0.5f,0.1f);
-        rotBox = new Geometry("Box", b);
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
-        rotBox.setMaterial(mat);
-//        rotBox.addControl(chaseCamera);
-        rootNode.attachChild(rotBox);
-        
-        //Quad quad = new Quad(0.5f, 0.5f);
-        
-        //Texture tex = assetManager.loadTexture("Textures/smile.jpg");
-        //smileMat.setTexture("Texture", assetManager.loadTexture("Textures/smile.jpg"));
-        
-        //rotQuad.setLocalTranslation(-3, -3, 0);
-        
-        //rotQuad.move(0, 1, 0);
-    }
+//    private void attachRotatingBox()
+//    {
+//        
+//        // wouldn't behave unless it had a z value greater than 0
+//        Box b = new Box(0.5f,0.5f,0.1f);
+//        rotBox = new Geometry("Box", b);
+//        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+//        rotBox.setMaterial(mat);
+////        rotBox.addControl(chaseCamera);
+//        rootNode.attachChild(rotBox);
+//        
+//    }
     
     //Doesn't work
     //Testing displaying an image for the world
@@ -223,13 +224,23 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     
     public void addPlayer(int id)
     {
-        SpriteImage spriteImage = spriteManager.createSpriteImage("smile.jpg", false);
+        //SpriteImage spriteImage = spriteManager.createSpriteImage("smile.jpg", false);
         
-        player = new Player(new Vector3f(0,0,0), spriteImage);
-        player.getSprite().setSize(0.4f);
-        // TODO: add chase camera to this player
-        //player.addControl(chaseCamera);
-        players.put(id, player);
+        //Player p = new Player(new Vector3f(0,0,0), spriteImage);
+        //p.getSprite().setSize(0.4f);
+        Player p = new Player(new Vector3f(0,0,0));
+        String idStr = "Player " + Integer.toString(id);
+        
+        Box b = new Box(0.5f,0.5f,0.1f);
+        Geometry geom = new Geometry(idStr, b);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        geom.setMaterial(mat);
+        
+        p.setGeometry(geom);
+        
+        players.put(id, p);
+        
+        rootNode.attachChild(geom);
     }
     
     public boolean playerExists(int id)
@@ -237,61 +248,46 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         return players.containsKey(id);
     }
     
-    public void movePlayer(int id, Vector3f position)
+    public void updatePlayer(int id, Vector3f position, Quaternion rotation)
     {
         players.get(id).setPosition(position);
+        players.get(id).setRotation(rotation);
     }
     
+    // TODO: update function
     public void removePlayer(int id)
     {
-        players.remove(id).getSprite().delete();
+        //players.remove(id).getSprite().delete();
     }
 
     @Override
     public void simpleUpdate(float tpf) {
         //TODO: add update code
         
+        // TODO: update players?
         // Update players
-        for(Player p : players.values())
-        {
-            p.update(tpf);
-        }
+//        for(Player p : players.values())
+//        {
+//            p.update(tpf);
+//        }
         
         // Update camera
         
-        // Send this players position every x movement distance
-        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
-        {
-            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
-            myClient.send(new ClientMessage(players.get(myClient.getId()).getPosition(), myClient.getId()));
-        }
-        
-                //From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
-//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
-//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
-//                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
-//                Ray ray = new Ray(mousePosition3d, dir);
-//                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
-//                Vector3f mousePositionWorld = new Vector3f();
-//                ray.intersectsWherePlane(plane, mousePositionWorld);
-//                mousePositionWorld.z = 0;
-//
-//                Quaternion rotation = new Quaternion();
-//                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
-//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
-//                rotBox.setLocalRotation(rotation);
-                
-                
-                
         // Rotate box to look at mouse cursor
         Vector2f mousePos = inputManager.getCursorPosition();
-        Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(rotBox.getLocalTranslation()));
+        Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
-
-
         float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
-        rotBox.setLocalRotation(playerRotation);
+        player.getGeometry().setLocalRotation(playerRotation);
+        player.setRotation(playerRotation);
+        // Send this players position every x movement distance
+//        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
+//        {
+//            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
+            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+//        }
+      
     }
 
     @Override
@@ -355,8 +351,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             if (name.equals(MAPPING_UP))
             {
                 // Set player up velocity
-                player.setVelocity(player.getVelocity().setY(2));
-                rotBox.move(0,0.003f,0);
+                //player.setVelocity(player.getVelocity().setY(2));
+                player.getGeometry().move(0,0.003f,0);
                 
             }
             
@@ -364,8 +360,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             if (name.equals(MAPPING_DOWN))
             {
                 // Set player down velocity
-                player.setVelocity(player.getVelocity().setY(-2));
-                rotBox.move(0,-0.003f,0);
+                //player.setVelocity(player.getVelocity().setY(-2));
+                player.getGeometry().move(0,-0.003f,0);
                 
             }
             
@@ -373,16 +369,16 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             if (name.equals(MAPPING_LEFT))
             {
                 // Set player left velocity
-                player.setVelocity(player.getVelocity().setX(-2));
-                rotBox.move(-0.003f,0,0);
+                //player.setVelocity(player.getVelocity().setX(-2));
+                player.getGeometry().move(-0.003f,0,0);
             }
             
             
             if (name.equals(MAPPING_RIGHT))
             {
                 // Set player right velocity
-                player.setVelocity(player.getVelocity().setX(2));
-                rotBox.move(0.003f,0,0);
+                //player.setVelocity(player.getVelocity().setX(2));
+                player.getGeometry().move(0.003f,0,0);
             }
             
         }
