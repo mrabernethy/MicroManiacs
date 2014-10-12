@@ -14,41 +14,27 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseAxisTrigger;
-import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
-import com.jme3.math.Plane;
 import com.jme3.math.Quaternion;
-import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
-import com.jme3.network.ClientStateListener;
 import com.jme3.network.ClientStateListener.DisconnectInfo;
 import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
-import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
-import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Quad;
 import com.jme3.system.JmeContext;
-import com.jme3.texture.Image;
-import com.jme3.texture.Texture;
-import com.jme3.texture.Texture2D;
-import com.jme3.util.BufferUtils;
 import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
 import engine.sprites.SpriteManager;
 import engine.sprites.SpriteMesh;
 import entities.Player;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -63,6 +49,11 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
 //    ChaseCamera chaseCamera;
     private Client myClient;
     private Vector3f lastSentPosition;
+    private Vector3f topY;
+    private Vector3f bottomY;
+    private Vector3f leftX;
+    private Vector3f rightX;
+    
     
     
     private BulletAppState bulletAppState;
@@ -115,7 +106,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
-        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.8f));
+        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,0));
         
         // Add the chase camera
 //        cam = this.getCamera();
@@ -166,7 +157,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         //attachRotatingBox(); // testing box for player
         
         // TODO: attach the world
-        //attachWorld();
+        attachBackground();
         
         // Add player
         addPlayer(myClient.getId());
@@ -177,7 +168,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         
         
         
-        
+        chaseCamera = new ChaseCamera(cam);
+        chaseCamera.setDefaultHorizontalRotation(FastMath.PI/2);
+        chaseCamera.setDefaultVerticalRotation(0);
+        player.getGeometry().addControl(chaseCamera);
         
         // TODO: add chase camera to this player
         //player.addControl(chaseCamera);
@@ -187,13 +181,13 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     
     /* Add some demo content */
     // Currently used for the background and set to white.
-    public void attachCube() {
+    public void attachBackground() {
         
         Box box = new Box(3,3,0);
         Geometry geom = new Geometry("Cube", box);
         Material mat = new Material(assetManager,
                 "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.White);
+        mat.setColor("Color", ColorRGBA.Gray);
         geom.setMaterial(mat);
         geom.setLocalScale(3);
         geom.setLocalTranslation(new Vector3f(0,0,-0.5f));
@@ -270,6 +264,28 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     {
         //players.remove(id).getSprite().delete();
     }
+    
+    public void collisionWithWall()
+    {
+        topY = new Vector3f(players.get(myClient.getId()).getPosition());
+        topY.setY(3.9f);
+        bottomY = new Vector3f(players.get(myClient.getId()).getPosition());
+        bottomY.setY(-3.9f);
+        rightX = new Vector3f(players.get(myClient.getId()).getPosition());
+        rightX.setX(5.24f);
+        leftX = new Vector3f(players.get(myClient.getId()).getPosition());
+        leftX.setX(-5.24f);
+        if (players.get(myClient.getId()).getPosition().getY() > 3.9) {
+            players.get(myClient.getId()).setPosition(topY);
+        } else if (players.get(myClient.getId()).getPosition().getY() < -3.9) {
+            players.get(myClient.getId()).setPosition(bottomY);
+        } else if (players.get(myClient.getId()).getPosition().getX() > 5.24) {
+            players.get(myClient.getId()).setPosition(rightX);
+        } else if (players.get(myClient.getId()).getPosition().getX() < -5.24) {
+            players.get(myClient.getId()).setPosition(leftX);
+        }
+        
+    }
 
     @Override
     public void simpleUpdate(float tpf) {
@@ -292,6 +308,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
         player.getGeometry().setLocalRotation(playerRotation);
         player.setRotation(playerRotation);
+        
+        collisionWithWall();
         // Send this players position every x movement distance
 //        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
 //        {
@@ -363,7 +381,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player up velocity
                 //player.setVelocity(player.getVelocity().setY(2));
-                player.getGeometry().move(0,0.003f,0);
+                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, 5, 0));
                 
             }
             
@@ -372,8 +390,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player down velocity
                 //player.setVelocity(player.getVelocity().setY(-2));
-                player.getGeometry().move(0,-0.003f,0);
-                
+                //player.getGeometry().move(0,-0.003f,0);
+                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, -5, 0));
             }
             
             
@@ -381,7 +399,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player left velocity
                 //player.setVelocity(player.getVelocity().setX(-2));
-                player.getGeometry().move(-0.003f,0,0);
+                //player.getGeometry().move(-0.003f,0,0);
+                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(-5, 0, 0));
             }
             
             
@@ -389,7 +408,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player right velocity
                 //player.setVelocity(player.getVelocity().setX(2));
-                player.getGeometry().move(0.003f,0,0);
+                //player.getGeometry().move(0.003f,0,0);
+                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(5, 0, 0));
             }
             
         }

@@ -4,14 +4,10 @@
  */
 package entities;
 
-import com.jme3.asset.AssetManager;
-import com.jme3.material.Material;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
-import com.jme3.scene.shape.Box;
-import engine.sprites.SpriteImage;
-import mygame.ClientMain;
 
 /**
  *
@@ -39,22 +35,22 @@ public class Player extends Entity{
     
     public void setPosition(Vector3f position)
     {
-        m_geometry.setLocalTranslation(position);
+        m_geometry.getControl(RigidBodyControl.class).setPhysicsLocation(position);
     }
     
     public Vector3f getPosition()
     {
-        return m_geometry.getLocalTranslation();
+        return m_geometry.getControl(RigidBodyControl.class).getPhysicsLocation();
     }
     
     public void setRotation(Quaternion rotation)
     {
-        m_geometry.setLocalRotation(rotation);
+        m_geometry.getControl(RigidBodyControl.class).setPhysicsRotation(rotation);
     }
     
     public Quaternion getRotation()
     {
-        return m_geometry.getLocalRotation();
+        return m_geometry.getControl(RigidBodyControl.class).getPhysicsRotation();
     }
     
 }
