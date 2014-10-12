@@ -64,7 +64,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private Geometry rotBox; // testing rotation of a quad attached to a geometry
     
     // Chase camera
-    //private ChaseCamera chaseCamera;
+    private ChaseCamera chaseCamera;
     
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
@@ -114,7 +114,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         // Add the chase camera
 //        cam = this.getCamera();
 //        chaseCamera = new ChaseCamera(cam);
-        
+//        chaseCamera.
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
         inputManager.addMapping(MAPPING_DOWN, TRIGGER_S, TRIGGER_DOWN);
@@ -194,10 +194,11 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     {
         
         // wouldn't behave unless it had a z value greater than 0
-        Box b = new Box(0.5f,0.5f,0.5f);
+        Box b = new Box(0.5f,0.5f,0.1f);
         rotBox = new Geometry("Box", b);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         rotBox.setMaterial(mat);
+//        rotBox.addControl(chaseCamera);
         rootNode.attachChild(rotBox);
         
         //Quad quad = new Quad(0.5f, 0.5f);
@@ -289,8 +290,15 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             if (name.equals(MAPPING_ROTATE)) {
                 // TODO: add rotate functin to player, rotate the sprite
 
-                
-                
+//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
+//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
+//                Vector3f boxPosition = rotBox.getLocalTranslation().clone();
+//                Vector3f v = new Vector3f(1,0,0);
+//                
+//                mousePosition3d.subtract(boxPosition);
+//                mousePosition3d.normalize();
+//                System.out.println(mousePosition3d.x + " : " + mousePosition3d.y);
+//                rotBox.rotate(mousePosition3d.x, mousePosition3d.y, 0);
                 // From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
                 Vector2f mousePositionScreen = inputManager.getCursorPosition();
                 Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
@@ -303,7 +311,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
 
                 Quaternion rotation = new Quaternion();
                 rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
-                
+                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
                 rotBox.setLocalRotation(rotation);
                 
             } 
@@ -313,7 +321,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player up velocity
                 player.setVelocity(player.getVelocity().setY(2));
-                
+                rotBox.move(0,0.003f,0);
                 
             }
             
@@ -322,6 +330,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player down velocity
                 player.setVelocity(player.getVelocity().setY(-2));
+                rotBox.move(0,-0.003f,0);
                 
             }
             
@@ -330,6 +339,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player left velocity
                 player.setVelocity(player.getVelocity().setX(-2));
+                rotBox.move(-0.003f,0,0);
             }
             
             
@@ -337,6 +347,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player right velocity
                 player.setVelocity(player.getVelocity().setX(2));
+                rotBox.move(0.003f,0,0);
             }
             
         }
