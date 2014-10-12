@@ -2,6 +2,9 @@ package mygame;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.AssetInfo;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.cursors.plugins.CursorLoader;
 import com.jme3.cursors.plugins.JmeCursor;
 import com.jme3.input.ChaseCamera;
@@ -61,7 +64,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private Client myClient;
     private Vector3f lastSentPosition;
     
-    private Geometry rotBox; // testing rotation of a quad attached to a geometry
+    
+    private BulletAppState bulletAppState;
     
     // Chase camera
     private ChaseCamera chaseCamera;
@@ -107,9 +111,11 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                     Globals.VERSION, Globals.DEFAULT_SERVER, 
                     Globals.DEFAULT_PORT);
             myClient.start();
-        } catch (IOException ex) {
-            
-        }
+        } catch (IOException ex) {}
+        
+        bulletAppState = new BulletAppState();
+        stateManager.attach(bulletAppState);
+        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.8f));
         
         // Add the chase camera
 //        cam = this.getCamera();
@@ -236,10 +242,15 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         geom.setMaterial(mat);
         
+        BoxCollisionShape shape = new BoxCollisionShape(new Vector3f(b.xExtent,b.yExtent,b.zExtent));
+        RigidBodyControl playerPhys = new RigidBodyControl(shape);
+        geom.addControl(playerPhys);
+        //geom.getControl();
         p.setGeometry(geom);
         
         players.put(id, p);
         
+        bulletAppState.getPhysicsSpace().add(playerPhys);
         rootNode.attachChild(geom);
     }
     
@@ -273,7 +284,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         
         // Update camera
         
-        // Rotate box to look at mouse cursor
+        // Rotate player to look at mouse cursor
         Vector2f mousePos = inputManager.getCursorPosition();
         Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
