@@ -1,6 +1,9 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
@@ -27,8 +30,10 @@ import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
 import engine.sprites.SpriteManager;
 import engine.sprites.SpriteMesh;
+import entities.Bullet;
 import entities.Player;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -48,14 +53,14 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private Vector3f leftX;
     private Vector3f rightX;
     
-    
-    private Geometry rotBox; // testing rotation of a quad attached to a geometry
+    private BulletAppState bulletAppState;
     
     // Chase camera
     private ChaseCamera chaseCamera;
     
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
+    private ArrayList<Bullet> bullets = new ArrayList();
     
     private final static Trigger TRIGGER_W = new KeyTrigger(KeyInput.KEY_W);
     private final static Trigger TRIGGER_S = new KeyTrigger(KeyInput.KEY_S);
@@ -95,9 +100,11 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                     Globals.VERSION, Globals.DEFAULT_SERVER, 
                     Globals.DEFAULT_PORT);
             myClient.start();
-        } catch (IOException ex) {
-            
-        }
+        } catch (IOException ex) {}
+        
+        bulletAppState = new BulletAppState();
+        stateManager.attach(bulletAppState);
+        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.8f));
         
         // Add the chase camera
 //        cam = this.getCamera();
@@ -222,9 +229,17 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         geom.setMaterial(mat);
         
+        BoxCollisionShape shape = new BoxCollisionShape(new Vector3f(b.xExtent,b.yExtent,b.zExtent));
+        RigidBodyControl playerPhys = new RigidBodyControl(shape);
+        playerPhys.setGravity(new Vector3f(0,0,0));
+        geom.addControl(playerPhys);
+        //geom.getControl();
+        
         Player p = new Player(new Vector3f(0,0,0), geom);
-        rootNode.attachChild(geom);
         players.put(id, p);
+        
+        bulletAppState.getPhysicsSpace().add(playerPhys);
+        rootNode.attachChild(geom);
     }
     
     public boolean playerExists(int id)
@@ -279,7 +294,7 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         
         // Update camera
         
-        // Rotate box to look at mouse cursor
+        // Rotate player to look at mouse cursor
         Vector2f mousePos = inputManager.getCursorPosition();
         Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
