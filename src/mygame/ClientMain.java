@@ -265,6 +265,33 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
             myClient.send(new ClientMessage(players.get(myClient.getId()).getPosition(), myClient.getId()));
         }
+        
+                //From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
+//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
+//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
+//                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
+//                Ray ray = new Ray(mousePosition3d, dir);
+//                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
+//                Vector3f mousePositionWorld = new Vector3f();
+//                ray.intersectsWherePlane(plane, mousePositionWorld);
+//                mousePositionWorld.z = 0;
+//
+//                Quaternion rotation = new Quaternion();
+//                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
+//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
+//                rotBox.setLocalRotation(rotation);
+                
+                
+                
+        // Rotate box to look at mouse cursor
+        Vector2f mousePos = inputManager.getCursorPosition();
+        Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(rotBox.getLocalTranslation()));
+        Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
+
+
+        float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
+        Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
+        rotBox.setLocalRotation(playerRotation);
     }
 
     @Override
@@ -298,21 +325,29 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
 //                mousePosition3d.subtract(boxPosition);
 //                mousePosition3d.normalize();
 //                System.out.println(mousePosition3d.x + " : " + mousePosition3d.y);
-//                rotBox.rotate(mousePosition3d.x, mousePosition3d.y, 0);
+//                //rotBox.rotate(0, 0, 0);
+//                Quaternion rotation = new Quaternion();
+//                rotation.lookAt(mousePosition3d, Vector3f.UNIT_Z);
+//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
+//                rotBox.setLocalRotation(rotation);
+                
+                
                 // From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
-                Vector2f mousePositionScreen = inputManager.getCursorPosition();
-                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
-                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
-                Ray ray = new Ray(mousePosition3d, dir);
-                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
-                Vector3f mousePositionWorld = new Vector3f();
-                ray.intersectsWherePlane(plane, mousePositionWorld);
-                mousePositionWorld.z = 0;
-
-                Quaternion rotation = new Quaternion();
-                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
-                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
-                rotBox.setLocalRotation(rotation);
+//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
+//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
+//                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
+//                Ray ray = new Ray(mousePosition3d, dir);
+//                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
+//                Vector3f mousePositionWorld = new Vector3f();
+//                ray.intersectsWherePlane(plane, mousePositionWorld);
+//                mousePositionWorld.z = 0;
+//
+//                Quaternion rotation = new Quaternion();
+//                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
+//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
+//                rotBox.setLocalRotation(rotation);
+                
+                
                 
             } 
             
