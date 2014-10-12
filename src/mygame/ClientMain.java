@@ -398,8 +398,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
             {
                 // Set player up velocity
                 //player.setVelocity(player.getVelocity().setY(2));
-                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, 5, 0));
-                
+                //player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, 5, 0));
+                Vector3f v = player.getPosition().clone();
+                v.y+=0.01f;
+                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
             }
             
             
@@ -408,7 +410,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                 // Set player down velocity
                 //player.setVelocity(player.getVelocity().setY(-2));
                 //player.getGeometry().move(0,-0.003f,0);
-                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, -5, 0));
+                //player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(0, -5, 0));
+                Vector3f v = player.getPosition().clone();
+                v.y-=0.01f;
+                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
             }
             
             
@@ -417,7 +422,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                 // Set player left velocity
                 //player.setVelocity(player.getVelocity().setX(-2));
                 //player.getGeometry().move(-0.003f,0,0);
-                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(-5, 0, 0));
+                //player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(-5, 0, 0));
+                Vector3f v = player.getPosition().clone();
+                v.x-=0.01f;
+                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
             }
             
             
@@ -426,7 +434,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                 // Set player right velocity
                 //player.setVelocity(player.getVelocity().setX(2));
                 //player.getGeometry().move(0.003f,0,0);
-                player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(5, 0, 0));
+                //player.getGeometry().getControl(RigidBodyControl.class).applyCentralForce(new Vector3f(5, 0, 0));
+                Vector3f v = player.getPosition().clone();
+                v.x+=0.01f;
+                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
             }
             
         }
