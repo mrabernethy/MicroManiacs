@@ -15,21 +15,19 @@ import java.util.logging.Level;
  * test
  * @author normenhansen
  */
-public class ServerMain extends SimpleApplication
-implements ConnectionListener
-{
-    private Server myServer;
-    int connections = 0;
-    int connectionsOld = -1;
+public class ServerMain extends SimpleApplication {
     
-    public static void main(String[] args) 
-    {
+    public static void main(String[] args) {
         java.util.logging.Logger.getLogger("").setLevel
                 (Level.SEVERE);
         ServerMain app = new ServerMain();
         app.start(JmeContext.Type.Headless);
     }
-
+    
+    private Server myServer;
+    int connections = 0;
+    int connectionsOld = -1;
+    
     @Override
     public void simpleInitApp() 
     {
@@ -39,9 +37,7 @@ implements ConnectionListener
                     Globals.VERSION, Globals.DEFAULT_PORT, 
                     Globals.DEFAULT_PORT);
             myServer.start();
-        } catch (IOException ex) {
-            
-        }
+        } catch (IOException ex) {}
         
         Serializer.registerClass(ClientMessage.class);
         Serializer.registerClass(GreetingMessage.class); // register the greeting message class
@@ -96,16 +92,5 @@ implements ConnectionListener
         super.destroy();
     }
     
-    /** Specify what happens when a client connects to this server */
-    public void connectionAdded(Server server, HostedConnection client) {
-         System.out.println("Server knows that client #"
-                + client.getId() + " is ready.");
-        client.close("");
-    }
     
-    /** Specify what happens when a client disconnects from this server */
-    public void connectionRemoved(Server server, HostedConnection client) {
-        System.out.println("Server knows that client #"
-                + client.getId() + " has left.");
-    }
 }

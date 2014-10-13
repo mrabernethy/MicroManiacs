@@ -1,6 +1,10 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.asset.TextureKey;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
@@ -22,7 +26,9 @@ import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
+import com.jme3.texture.Texture;
 import engine.sprites.Sprite;
 import engine.sprites.SpriteImage;
 import engine.sprites.SpriteManager;
@@ -36,21 +42,37 @@ import java.util.logging.Level;
  *
  * @author Mike
  */
-public class ClientMain extends SimpleApplication //implements ClientStateListener
-{
-    private SpriteManager spriteManager;
-//    Camera cam;
-//    ChaseCamera chaseCamera;
+public class ClientMain extends SimpleApplication {
+    
+    public static void main(String[] args) {
+        java.util.logging.Logger.getLogger("").setLevel(Level.SEVERE);
+        ClientMain app = new ClientMain();
+        app.start(JmeContext.Type.Display);
+    }
+    
+    /** Prepare the Physics Application State (jBullet) */
+    private BulletAppState bulletAppState;
+  
+    /** Prepare Materials */
+    Material floor_mat;
+    
+    /** Prepare geometries and physical nodes*/
+    private RigidBodyControl    floor_phy;
+    private static final Box    floor;
+    
+    static {
+    /** Initialize the floor geometry */
+    floor = new Box(10f, 10f, 0.1f);
+    floor.scaleTextureCoordinates(new Vector2f(1, 1));
+    }
+    
     private Client myClient;
     private Vector3f lastSentPosition;
     private Vector3f topY;
     private Vector3f bottomY;
     private Vector3f leftX;
     private Vector3f rightX;
-    
-    
-    private Geometry rotBox; // testing rotation of a quad attached to a geometry
-    
+       
     // Chase camera
     private ChaseCamera chaseCamera;
     
@@ -65,28 +87,15 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
     private final static Trigger TRIGGER_DOWN = new KeyTrigger(KeyInput.KEY_DOWN);
     private final static Trigger TRIGGER_LEFT = new KeyTrigger(KeyInput.KEY_LEFT);
     private final static Trigger TRIGGER_RIGHT = new KeyTrigger(KeyInput.KEY_RIGHT);
-    // TODO: add shoot 
+    // TODO: add shoot -- on click or space?
     //private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
-    private final static Trigger TRIGGER_ROTATE_X_LEFT = new MouseAxisTrigger(MouseInput.AXIS_X, true);
-    private final static Trigger TRIGGER_ROTATE_X_RIGHT = new MouseAxisTrigger(MouseInput.AXIS_Y, false);
-    private final static Trigger TRIGGER_ROTATE_Y_DOWN = new MouseAxisTrigger(MouseInput.AXIS_Y, true);
-    private final static Trigger TRIGGER_ROTATE_Y_UP = new MouseAxisTrigger(MouseInput.AXIS_Y, false);
     
     private final static String  MAPPING_UP = "Up";
     private final static String  MAPPING_DOWN = "Down";
     private final static String  MAPPING_LEFT = "Left";
     private final static String  MAPPING_RIGHT = "Right";
     //private final static String  MAPPING_SHOOT = "Shoot";
-    private final static String  MAPPING_ROTATE = "Rotate";
     
-    
-    public static void main(String[] args) 
-    {
-        java.util.logging.Logger.getLogger("").setLevel(Level.SEVERE);
-        ClientMain app = new ClientMain();
-        app.start(JmeContext.Type.Display);
-    }
-
     @Override
     public void simpleInitApp() 
     { 
@@ -95,26 +104,28 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
                     Globals.VERSION, Globals.DEFAULT_SERVER, 
                     Globals.DEFAULT_PORT);
             myClient.start();
-        } catch (IOException ex) {
-            
-        }
+        } catch (IOException ex) {}
         
-        // Add the chase camera
-//        cam = this.getCamera();
-//        chaseCamera = new ChaseCamera(cam);
-//        chaseCamera.
+        /** Set up Physics Game */
+        bulletAppState = new BulletAppState();
+        stateManager.attach(bulletAppState);
+        //bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
         inputManager.addMapping(MAPPING_DOWN, TRIGGER_S, TRIGGER_DOWN);
         inputManager.addMapping(MAPPING_LEFT, TRIGGER_A, TRIGGER_LEFT);
         inputManager.addMapping(MAPPING_RIGHT, TRIGGER_D, TRIGGER_RIGHT);
+        // TODO: add mapping for mouse buttons
         //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
-        inputManager.addMapping(MAPPING_ROTATE, TRIGGER_ROTATE_X_LEFT, TRIGGER_ROTATE_X_RIGHT, TRIGGER_ROTATE_Y_DOWN, TRIGGER_ROTATE_Y_UP);
+        
         // TODO: add space mapping to listener
+        // Listener for click events ie. shoot bullet
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
+        // Listener for push events ie. move up
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_ROTATE});
+            MAPPING_LEFT, MAPPING_RIGHT});
         
         // Set cursor visible
         inputManager.setCursorVisible(true);
@@ -122,8 +133,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
 //        IntBuffer image = new IntBuffer
 //        inputManager.setMouseCursor(JmeCursor.class.);
         
-        spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
-        getStateManager().attach(spriteManager);
+//        spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
+//        getStateManager().attach(spriteManager);
         
         // Register the message classes
         Serializer.registerClass(ClientMessage.class);
@@ -143,12 +154,10 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         myClient.send(new ClientMessage(this.cam.getLocation(), this.cam.getRotation(), myClient.getId()));
         lastSentPosition = new Vector3f(this.cam.getLocation());
         
-        //attachCube(); // attaches a cube to the spatial
         
-        //attachRotatingBox(); // testing box for player
         
         // TODO: attach the world
-        attachBackground();
+        //attachBackground();
         
         // Add player
         addPlayer(myClient.getId());
@@ -157,62 +166,58 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         // Stop the camera moving
         this.flyCam.setEnabled(false);
         
-        
-        
+        // Attach the chase cam to the player
         chaseCamera = new ChaseCamera(cam);
         chaseCamera.setDefaultHorizontalRotation(FastMath.PI/2);
         chaseCamera.setDefaultVerticalRotation(0);
         player.getGeometry().addControl(chaseCamera);
         
-        // TODO: add chase camera to this player
-        //player.addControl(chaseCamera);
+        /** Initialize the scene, materials, and physics space */
+        initMaterials();
+        initFloor();
+//        initCrossHairs();
     }
     
-    
-    
-    /* Add some demo content */
-    // Currently used for the background and set to white.
-    public void attachBackground() {
-        
-        Box box = new Box(3,3,0);
-        Geometry geom = new Geometry("Cube", box);
-        Material mat = new Material(assetManager,
-                "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Gray);
-        geom.setMaterial(mat);
-        geom.setLocalScale(3);
-        geom.setLocalTranslation(new Vector3f(0,0,-0.5f));
-        //geom.addControl(chaseCamera);
-        rootNode.attachChild(geom);
+    /** Initialize the materials used in this scene. */
+    public void initMaterials() {
+        floor_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        TextureKey key3 = new TextureKey("Textures/testWorld.jpg");                                     //Terrain/Pond/Pond.jpg");
+        key3.setGenerateMips(true);
+        Texture tex3 = assetManager.loadTexture(key3);
+        tex3.setWrap(Texture.WrapMode.Repeat);
+        floor_mat.setTexture("ColorMap", tex3);
     }
     
-    /**
-     * Attaches a box that rotates with the mouse cursor.
-     * 
-     */
-//    private void attachRotatingBox()
-//    {
+    /** Make a solid floor and add it to the scene. */
+    public void initFloor() {
+        Geometry floor_geo = new Geometry("Floor", floor);
+        floor_geo.setMaterial(floor_mat);
+        floor_geo.setLocalTranslation(0, 0, -0.1f);
+        this.rootNode.attachChild(floor_geo);
+        /* Make the floor physical with mass 0.0f! */
+        floor_phy = new RigidBodyControl(0.0f);
+        floor_geo.addControl(floor_phy);
+        bulletAppState.getPhysicsSpace().add(floor_phy);
+    }
+    
+//    /** A plus sign used as crosshairs to help the player with aiming.*/
+//    protected void initCrossHairs() {
+//        guiNode.detachAllChildren();
+//        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+//        BitmapText ch = new BitmapText(guiFont, false);
+//        ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+//        ch.setText("+");        // fake crosshairs :)
+////        ch.setLocalTranslation( // center
+////          settings.getWidth() / 2 - guiFont.getCharSet().getRenderedSize() / 3 * 2,
+////          settings.getHeight() / 2 + ch.getLineHeight() / 2, 0);
+//        Vector2f mousePos = inputManager.getCursorPosition();
+//        //Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
+//        Vector3f relativePos = new Vector3f(mousePos.x,mousePos.y,0);
 //        
-//        // wouldn't behave unless it had a z value greater than 0
-//        Box b = new Box(0.5f,0.5f,0.1f);
-//        rotBox = new Geometry("Box", b);
-//        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
-//        rotBox.setMaterial(mat);
-////        rotBox.addControl(chaseCamera);
-//        rootNode.attachChild(rotBox);
-//        
+//        ch.setLocalTranslation(relativePos);
+//        guiNode.attachChild(ch);
 //    }
-    
-    //Doesn't work
-    //Testing displaying an image for the world
-    public void attachWorld()
-    {
-        SpriteImage spriteImage = spriteManager.createSpriteImage("testWorld.jpg", false);
-        
-        Sprite sprite = new Sprite(spriteImage);
-        sprite.setPosition(0, 0, 0);
-    }
-    
+       
     public void addPlayer(int id)
     {
         String idStr = "Player " + Integer.toString(id);
@@ -294,6 +299,8 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
 //            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
             myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
 //        }
+            
+//            initCrossHairs();
       
     }
 
@@ -317,44 +324,6 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         public void onAnalog(String name, float intensity, float tpf) {
             System.out.println("Mapping detected (analog): "+ name + " " + intensity );
             
-            if (name.equals(MAPPING_ROTATE)) {
-                // TODO: add rotate functin to player, rotate the sprite
-
-//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
-//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
-//                Vector3f boxPosition = rotBox.getLocalTranslation().clone();
-//                Vector3f v = new Vector3f(1,0,0);
-//                
-//                mousePosition3d.subtract(boxPosition);
-//                mousePosition3d.normalize();
-//                System.out.println(mousePosition3d.x + " : " + mousePosition3d.y);
-//                //rotBox.rotate(0, 0, 0);
-//                Quaternion rotation = new Quaternion();
-//                rotation.lookAt(mousePosition3d, Vector3f.UNIT_Z);
-//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
-//                rotBox.setLocalRotation(rotation);
-                
-                
-                // From: http://hub.jmonkeyengine.org/forum/topic/getworldcoordinates-what-it-does-exactly/
-//                Vector2f mousePositionScreen = inputManager.getCursorPosition();
-//                Vector3f mousePosition3d = cam.getWorldCoordinates(mousePositionScreen, 0).clone();
-//                Vector3f dir = cam.getWorldCoordinates(mousePositionScreen, 1f).subtractLocal(mousePosition3d).normalizeLocal();
-//                Ray ray = new Ray(mousePosition3d, dir);
-//                Plane plane = new Plane(Vector3f.UNIT_Z, 0);
-//                Vector3f mousePositionWorld = new Vector3f();
-//                ray.intersectsWherePlane(plane, mousePositionWorld);
-//                mousePositionWorld.z = 0;
-//
-//                Quaternion rotation = new Quaternion();
-//                rotation.lookAt(mousePositionWorld.subtract(rotBox.getLocalTranslation()), Vector3f.UNIT_Z);
-//                //player.getSprite().getSpriteMesh().getGeometry().setLocalRotation(rotation);
-//                rotBox.setLocalRotation(rotation);
-                
-                
-                
-            } 
-            
-            // Tried to get it to work with intensity but no good
             if (name.equals(MAPPING_UP))
             {
                 // Set player up velocity
@@ -425,23 +394,4 @@ public class ClientMain extends SimpleApplication //implements ClientStateListen
         }
     };
 
-    
-    /** Specify what happens when this client connects to server */
-    public void clientConnected(Client client) 
-    {
-        System.out.println("Client #" + client.getId() + " is ready.");
-        
-        
-        
-//        /* example for client-server communication that changes the scene graph */          // not working
-//        Message m = new CubeMessage();                                                      // doesn't initialise cubemessage colour variable
-//        //Message m = new CubeMessage(ColorRGBA.randomColor());                               // trying with colour initialised
-//        myClient.send(m);        
-    }
-    
-    /** Specify what happens when this client disconnects from server */
-    public void clientDisconnected(Client client, DisconnectInfo info) // not firing
-    {
-        System.out.println("Client #" + client.getId() + " has left.");
-    }
 }
