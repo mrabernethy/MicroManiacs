@@ -25,7 +25,7 @@ implements ConnectionListener
     public static void main(String[] args) 
     {
         java.util.logging.Logger.getLogger("").setLevel
-                (Level.WARNING);
+                (Level.SEVERE);
         ServerMain app = new ServerMain();
         app.start(JmeContext.Type.Headless);
     }

@@ -5,17 +5,18 @@
 package entities;
 
 import com.jme3.math.Vector3f;
-import engine.sprites.SpriteImage;
+import com.jme3.scene.Geometry;
 
 /**
  *
  * @author Taylor
  */
 public class Player extends Entity{
+
     
-    public Player(Vector3f position, SpriteImage spriteImage)
+    public Player(Vector3f position, Geometry geom)                            //, SpriteImage spriteImage)
     {
-        super(position, spriteImage);
+        super(position, geom);                                          //, spriteImage);
+        
     }
-    
 }

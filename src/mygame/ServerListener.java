@@ -48,7 +48,8 @@ implements MessageListener<HostedConnection>
         if(message instanceof ClientMessage)
         {
             ClientMessage clientMessage = (ClientMessage) message;
-            System.out.println("Server recieved position " + clientMessage.getPos().toString() + " from client #" + clientMessage.getClientID());
+            System.out.println("Server recieved position " + clientMessage.getPos().toString() 
+                    + " and rotation " + clientMessage.getQuat().toString() + " from client #" + clientMessage.getClientID());
             
             for(HostedConnection h : server.getConnections())
             {
