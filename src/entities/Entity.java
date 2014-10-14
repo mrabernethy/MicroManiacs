@@ -4,10 +4,10 @@
  */
 package entities;
 
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
-import com.jme3.scene.Node;
 
 /**
  *
@@ -22,10 +22,10 @@ public abstract class Entity {
     private boolean alive;
     
     
-    public Entity(Vector3f position, Geometry geom)                                    //, SpriteImage spriteImage)
+    public Entity(Vector3f position, Geometry geom)                                    
     {
         this.geom = geom;
-        this.geom.setLocalTranslation(position);
+        this.geom.getControl(RigidBodyControl.class).setPhysicsLocation(position);
         this.velocity = new Vector3f();
     }
 
@@ -53,12 +53,13 @@ public abstract class Entity {
     
     public void setRotation(Quaternion rotation)
     {
-        this.geom.setLocalRotation(rotation);
+        this.geom.getControl(RigidBodyControl.class).setPhysicsRotation(rotation);
     }
     
     public Quaternion getRotation()
     {
-        return this.geom.getLocalRotation();
+        return this.geom.getControl(RigidBodyControl.class).getPhysicsRotation();
+        //return this.geom.getLocalRotation();
     }
     
     public Geometry getGeometry()
@@ -74,11 +75,12 @@ public abstract class Entity {
     public void setPosition(Vector3f position)
     {
         this.geom.center();
-        this.geom.setLocalTranslation(position);
+        this.geom.getControl(RigidBodyControl.class).setPhysicsLocation(position);
     }
     
     public Vector3f getPosition()
     {
-        return this.geom.getLocalTranslation();
+        return this.geom.getControl(RigidBodyControl.class).getPhysicsLocation();
+        //return this.geom.getLocalTranslation();
     }
 }

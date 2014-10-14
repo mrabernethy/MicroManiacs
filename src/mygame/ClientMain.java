@@ -3,6 +3,9 @@ package mygame;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
+import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
@@ -16,6 +19,7 @@ import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
+import com.jme3.math.Plane;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
@@ -25,6 +29,7 @@ import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Mesh;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
@@ -54,16 +59,32 @@ public class ClientMain extends SimpleApplication {
     private BulletAppState bulletAppState;
   
     /** Prepare Materials */
+    Material player_mat;
     Material floor_mat;
     
-    /** Prepare geometries and physical nodes*/
+    /** Prepare geometries and physical nodes for floor and player*/
+    private RigidBodyControl    player_phy;
+    private static final Box    box;
     private RigidBodyControl    floor_phy;
     private static final Box    floor;
+    private RigidBodyControl    test_phy;
+    private static final Box    test_box;
+    
+    /** Dimensions used for player box */
+    private static final float playerLength = 0.5f;
+    private static final float playerWidth  = 0.5f;
+    private static final float playerHeight = 0.5f;
     
     static {
+    /** Initialize the player geometry */
+    box = new Box(playerLength, playerHeight, playerWidth);
+    box.scaleTextureCoordinates(new Vector2f(1f, .5f));
     /** Initialize the floor geometry */
-    floor = new Box(10f, 10f, 0.1f);
-    floor.scaleTextureCoordinates(new Vector2f(1, 1));
+    floor = new Box(10,10,0.1f);                                                // TODO: not sure why player doesn't fall off floor
+    floor.scaleTextureCoordinates(new Vector2f(1f, 1f));                            // Don't think the texture perfectly covers the floor box
+    /** Initialize the test box */
+    test_box = new Box(1,1,1);
+    test_box.scaleTextureCoordinates(new Vector2f(1f, .5f));
     }
     
     private Client myClient;
@@ -109,7 +130,8 @@ public class ClientMain extends SimpleApplication {
         /** Set up Physics Game */
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
-        //bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.8f));
         
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
@@ -159,9 +181,18 @@ public class ClientMain extends SimpleApplication {
         // TODO: attach the world
         //attachBackground();
         
+        /** Initialize the scene, materials, and physics space */
+        initMaterials();
+        initFloor();
+//        initCrossHairs();
+        
         // Add player
         addPlayer(myClient.getId());
         player = (players.get(myClient.getId()));
+        
+        // Add a box to test physics collisions
+        addTestBox();
+        
         
         // Stop the camera moving
         this.flyCam.setEnabled(false);
@@ -172,14 +203,20 @@ public class ClientMain extends SimpleApplication {
         chaseCamera.setDefaultVerticalRotation(0);
         player.getGeometry().addControl(chaseCamera);
         
-        /** Initialize the scene, materials, and physics space */
-        initMaterials();
-        initFloor();
-//        initCrossHairs();
+//        /** Initialize the scene, materials, and physics space */
+//        initMaterials();
+//        initFloor();
+////        initCrossHairs();
     }
     
     /** Initialize the materials used in this scene. */
     public void initMaterials() {
+        player_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        TextureKey key = new TextureKey("Textures/Terrain/BrickWall/BrickWall.jpg");
+        key.setGenerateMips(true);
+        Texture tex = assetManager.loadTexture(key);
+        player_mat.setTexture("ColorMap", tex);
+        
         floor_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         TextureKey key3 = new TextureKey("Textures/testWorld.jpg");                                     //Terrain/Pond/Pond.jpg");
         key3.setGenerateMips(true);
@@ -192,11 +229,15 @@ public class ClientMain extends SimpleApplication {
     public void initFloor() {
         Geometry floor_geo = new Geometry("Floor", floor);
         floor_geo.setMaterial(floor_mat);
-        floor_geo.setLocalTranslation(0, 0, -0.1f);
-        this.rootNode.attachChild(floor_geo);
+        floor_geo.setLocalTranslation(0, 0, -1f);
+        floor_geo.setLocalScale(10, 10, 0.1f);
+        
         /* Make the floor physical with mass 0.0f! */
-        floor_phy = new RigidBodyControl(0.0f);
+        PlaneCollisionShape plane = new PlaneCollisionShape(new Plane(new Vector3f(0,0,1),0));
+        floor_phy = new RigidBodyControl(plane, 0.0f);
         floor_geo.addControl(floor_phy);
+        
+        this.rootNode.attachChild(floor_geo);
         bulletAppState.getPhysicsSpace().add(floor_phy);
     }
     
@@ -222,14 +263,45 @@ public class ClientMain extends SimpleApplication {
     {
         String idStr = "Player " + Integer.toString(id);
         
-        Box b = new Box(0.5f,0.5f,0.1f);
-        Geometry geom = new Geometry(idStr, b);
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
-        geom.setMaterial(mat);
+        //Box b = new Box(0.5f,0.5f,0.1f);
         
-        Player p = new Player(new Vector3f(0,0,0), geom);
-        rootNode.attachChild(geom);
+        /** Create a player geometry and attach to scene graph. */
+        Geometry player_geo = new Geometry(idStr, box);
+        player_geo.setMaterial(player_mat);
+        rootNode.attachChild(player_geo);
+        /** Position the player geometry  */                                        // TODO: set the initial or respawned position
+        //player_geo.setLocalTranslation(loc);
+        /** Make player physical with a mass > 0.0f. */
+        //player_phy = new RigidBodyControl();
+        CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(0.5f, 0.5f, 2);
+        player_phy = new RigidBodyControl(capsuleShape, 100f);
+        player_phy.setAngularFactor(0f);
+        //player_phy.setKinematic(true);
+
+//        player_phy.setPhysicsLocation(new Vector3f(0, 10, 0));
+        /** Add physical player to physics space. */
+        player_geo.addControl(player_phy);
+        bulletAppState.getPhysicsSpace().add(player_phy);
+        
+        // Create a new player and add to collection
+        Player p = new Player(new Vector3f(0,0,0), player_geo);                     // TODO: Cane remove vector from player class?
         players.put(id, p);
+    }
+    
+    private void addTestBox()
+    {
+        Geometry testbox_geo = new Geometry("TestBox", box);
+        testbox_geo.setMaterial(player_mat);
+        rootNode.attachChild(testbox_geo);
+        
+        /** Make player physical with a mass > 0.0f. */
+        test_phy = new RigidBodyControl(0f);
+        
+        /** Add physical player to physics space. */
+        testbox_geo.addControl(test_phy);
+        bulletAppState.getPhysicsSpace().add(test_phy);
+        
+        testbox_geo.getControl(RigidBodyControl.class).setPhysicsLocation(new Vector3f(2,2,0));
     }
     
     public boolean playerExists(int id)
@@ -239,8 +311,11 @@ public class ClientMain extends SimpleApplication {
     
     public void updatePlayer(int id, Vector3f position, Quaternion rotation)
     {
-        players.get(id).setPosition(position);
-        players.get(id).setRotation(rotation);
+//        if (id != myClient.getId())
+//        {
+            players.get(id).getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(position);
+            players.get(id).getGeometry().getControl(RigidBodyControl.class).setPhysicsRotation(rotation);
+//        }
     }
     
     // TODO: update function
@@ -249,27 +324,28 @@ public class ClientMain extends SimpleApplication {
         //players.remove(id).getSprite().delete();
     }
     
-    public void collisionWithWall()
-    {
-        topY = new Vector3f(player.getPosition());
-        topY.setY(3.9f);
-        bottomY = new Vector3f(player.getPosition());
-        bottomY.setY(-3.9f);
-        rightX = new Vector3f(player.getPosition());
-        rightX.setX(5.24f);
-        leftX = new Vector3f(player.getPosition());
-        leftX.setX(-5.24f);
-        if (player.getPosition().getY() > 3.9) {
-            player.setPosition(topY);
-        } else if (player.getPosition().getY() < -3.9) {
-            player.setPosition(bottomY);
-        } else if (player.getPosition().getX() > 5.24) {
-            player.setPosition(rightX);
-        } else if (player.getPosition().getX() < -5.24) {
-            player.setPosition(leftX);
-        }
-        
-    }
+    // TODO: Reassess edge of world handling
+//    public void collisionWithWall()
+//    {
+//        topY = new Vector3f(player.getPosition());
+//        topY.setY(3.9f);
+//        bottomY = new Vector3f(player.getPosition());
+//        bottomY.setY(-3.9f);
+//        rightX = new Vector3f(player.getPosition());
+//        rightX.setX(5.24f);
+//        leftX = new Vector3f(player.getPosition());
+//        leftX.setX(-5.24f);
+//        if (player.getPosition().getY() > 3.9) {
+//            player.setPosition(topY);
+//        } else if (player.getPosition().getY() < -3.9) {
+//            player.setPosition(bottomY);
+//        } else if (player.getPosition().getX() > 5.24) {
+//            player.setPosition(rightX);
+//        } else if (player.getPosition().getX() < -5.24) {
+//            player.setPosition(leftX);
+//        }
+//        
+//    }
 
     @Override
     public void simpleUpdate(float tpf) {
@@ -290,9 +366,9 @@ public class ClientMain extends SimpleApplication {
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
         float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
-        player.setRotation(playerRotation);
+        player.getGeometry().getControl(RigidBodyControl.class).setPhysicsRotation(playerRotation);
         
-        collisionWithWall();
+        //collisionWithWall();
         // Send this players position every x movement distance
 //        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
 //        {
@@ -328,7 +404,12 @@ public class ClientMain extends SimpleApplication {
             {
                 // Set player up velocity
                 //player.setVelocity(player.getVelocity().setY(2));
-                player.getGeometry().move(0,0.003f,0);
+//                player.getGeometry().move(0,0.03f,0);
+//                Vector3f v = player.getPosition();
+//                v.y += 0.03f;
+//                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,10f,0));
+                
                 
             }
             
@@ -337,7 +418,11 @@ public class ClientMain extends SimpleApplication {
             {
                 // Set player down velocity
                 //player.setVelocity(player.getVelocity().setY(-2));
-                player.getGeometry().move(0,-0.003f,0);
+//                player.getGeometry().move(0,-0.03f,0);
+//                Vector3f v = player.getPosition();
+//                v.y -= 0.03f;
+//                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,-10f,0));
                 
             }
             
@@ -346,7 +431,11 @@ public class ClientMain extends SimpleApplication {
             {
                 // Set player left velocity
                 //player.setVelocity(player.getVelocity().setX(-2));
-                player.getGeometry().move(-0.003f,0,0);
+//                player.getGeometry().move(-0.03f,0,0);
+//                Vector3f v = player.getPosition();
+//                v.x -= 0.03f;
+//                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(-10f,0,0));
             }
             
             
@@ -354,7 +443,11 @@ public class ClientMain extends SimpleApplication {
             {
                 // Set player right velocity
                 //player.setVelocity(player.getVelocity().setX(2));
-                player.getGeometry().move(0.003f,0,0);
+                player.getGeometry().move(0.03f,0,0);
+//                Vector3f v = player.getPosition();
+//                v.x += 0.03f;
+//                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(10f,0,0));
             }
             
         }
@@ -365,31 +458,35 @@ public class ClientMain extends SimpleApplication {
         public void onAction(String name, boolean keyPressed, float tpf) {
         /** TODO: test for mapping names and implement actions */
             System.out.println("Mapping detected (discrete): "+ name);
-            player = players.get(myClient.getId());                   // made player a class variable
+            //player = players.get(myClient.getId());                   // made player a class variable
             
             // UP
             if(name.equals(MAPPING_UP) && !keyPressed)
             {
                 // Set player left velocity
-                player.setVelocity(player.getVelocity().setY(0));
+                //player.setVelocity(player.getVelocity().setY(0));
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
             }
             // DOWN
             if(name.equals(MAPPING_DOWN) && !keyPressed)
             {
                 // Set player right velocity
-                player.setVelocity(player.getVelocity().setY(0));
+                //player.setVelocity(player.getVelocity().setY(0));
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
             }
             // LEFT
             if(name.equals(MAPPING_LEFT) && !keyPressed)
             {
                 // Set player up velocity
-                player.setVelocity(player.getVelocity().setX(0));
+                //player.setVelocity(player.getVelocity().setX(0));
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
             }
             // RIGHT
             if(name.equals(MAPPING_RIGHT) && !keyPressed)
             {
                 // Set player down velocity
-                player.setVelocity(player.getVelocity().setX(0));
+                //player.setVelocity(player.getVelocity().setX(0));
+                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
             }
         }
     };
