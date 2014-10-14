@@ -45,6 +45,8 @@ implements MessageListener<Client>
         {
             final ClientMessage clientMessage = (ClientMessage) message;
             
+            System.out.println("Client recieved position:" + clientMessage.getPos() + " and rotation:" + clientMessage.getQuat() + " for client #" + clientMessage.getClientID());
+            
             app.enqueue(new Callable() {
                 public Void call()
                 {

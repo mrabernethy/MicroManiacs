@@ -44,7 +44,9 @@ public class ClientMain extends SimpleApplication {
     private Node world;
     
     private Client myClient;
+    
     private Vector3f lastSentPosition;
+      
     private Vector3f topY;
     private Vector3f bottomY;
     private Vector3f leftX;
@@ -278,11 +280,11 @@ public class ClientMain extends SimpleApplication {
         
         //collisionWithWall();
         // Send this players position every x movement distance
-        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
-        {
-            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
-            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
-        }
+//        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
+//        {
+//            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
+//            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+//        }
             
 //            initCrossHairs();
       
@@ -323,27 +325,27 @@ public class ClientMain extends SimpleApplication {
                     // Set player up velocity
                     //player.setVelocity(player.getVelocity().setY(2));
                     //player.getGeometry().move(0,0.003f,0);
-                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_UP, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_UP, player.getRotation(), myClient.getId()));
                 }
                 if(name.equals(MAPPING_DOWN)&& keyPressed)
                 {
-                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_DOWN, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_DOWN, player.getRotation(), myClient.getId()));
                 }
                 if(name.equals(MAPPING_LEFT)&& keyPressed)
                 {
-                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_LEFT, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_LEFT, player.getRotation(), myClient.getId()));
                 }
                 if(name.equals(MAPPING_RIGHT)&& keyPressed)
                 {
-                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_RIGHT, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_RIGHT, player.getRotation(), myClient.getId()));
                 }
                 if((name.equals(MAPPING_UP) || name.equals(MAPPING_DOWN)) && !keyPressed)
                 {
-                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_UP_DOWN, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_UP_DOWN, player.getRotation(), myClient.getId()));
                 }
                 if((name.equals(MAPPING_LEFT) || name.equals(MAPPING_RIGHT)) && !keyPressed)
                 {
-                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_LEFT_RIGHT, myClient.getId()));
+                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_LEFT_RIGHT, player.getRotation(), myClient.getId()));
                 }
             }
         }

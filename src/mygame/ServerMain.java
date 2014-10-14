@@ -68,6 +68,14 @@ public class ServerMain extends SimpleApplication {
             System.out.println("Server connections: " + connections);
             connectionsOld = connections;
         }
+        
+        //System.out.println(players.size());
+        
+        for(int i = 0; i < players.size(); i++)
+        {
+            ClientMessage message = new ClientMessage(players.get(i).getPosition(), players.get(i).getRotation(), i);
+            myServer.broadcast(message);
+        }
     }
     
     public void removePlayer(int id)
@@ -113,6 +121,7 @@ public class ServerMain extends SimpleApplication {
         // Update players
         for(Player p : players.values())
         {
+            System.out.println("Looping");
             p.update(tpf);
         }
         
@@ -120,6 +129,7 @@ public class ServerMain extends SimpleApplication {
         
         
         // Check collisions
+
     }
 
     @Override
