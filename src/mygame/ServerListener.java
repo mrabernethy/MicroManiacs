@@ -56,14 +56,14 @@ implements MessageListener<HostedConnection>
         
         if(message instanceof ClientCommandMessage)
         {
-            ClientCommandMessage cmdMessage = (ClientCommandMessage) message;
+            final ClientCommandMessage cmdMessage = (ClientCommandMessage) message;
            // System.out.println("Server recieved command " + cmdMessage.getCommand().toString() + " from client #" + cmdMessage.getClientID());
             
             System.out.println(cmdMessage.getCommand());
             
-            //app.enqueue(new Callable() {
-                //public Void call()
-                //{
+            app.enqueue(new Callable() {
+                public Void call()
+                {
                     if(cmdMessage.getCommand().equals(ClientCommand.MOVE_UP))
                     {
                         app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(3);
@@ -88,9 +88,9 @@ implements MessageListener<HostedConnection>
                     {
                         app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(0);
                     }
-                //    return null;
-               //}
-               // });
+                    return null;
+               }
+               });
             
             // Check what command was sent
             
