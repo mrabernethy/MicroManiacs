@@ -22,7 +22,7 @@ public abstract class Entity {
     private boolean alive;
     
     
-    public Entity(Vector3f position, Geometry geom)                                    //, SpriteImage spriteImage)
+    public Entity(Vector3f position, Geometry geom)
     {
         this.geom = geom;
         this.geom.setLocalTranslation(position);
@@ -40,16 +40,16 @@ public abstract class Entity {
     }
     
     
-//    public void update(float deltaTime)
-//    {
-//        Vector3f newPos = new Vector3f(position.x, position.y, position.z);
-//        
-//        newPos.x += deltaTime * velocity.x;
-//        newPos.y += deltaTime * velocity.y;
-//        newPos.z += deltaTime * velocity.z;
-//        
-//        setPosition(newPos);
-//    }
+    public void update(float deltaTime)
+    {
+        Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
+        
+        newPos.x += deltaTime * velocity.x;
+        newPos.y += deltaTime * velocity.y;
+        newPos.z += deltaTime * velocity.z;
+        
+        setPosition(newPos);
+    }
     
     public void setRotation(Quaternion rotation)
     {

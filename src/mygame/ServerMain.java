@@ -47,12 +47,15 @@ public class ServerMain extends SimpleApplication {
         } catch (IOException ex) {}
         
         Serializer.registerClass(ClientMessage.class);
-        Serializer.registerClass(GreetingMessage.class); // register the greeting message class
+        Serializer.registerClass(GreetingMessage.class); 
+        Serializer.registerClass(ClientCommandMessage.class); 
 
         myServer.addMessageListener(new ServerListener(this, myServer),
                 GreetingMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
                 ClientMessage.class);
+        myServer.addMessageListener(new ServerListener(this, myServer),
+                ClientCommandMessage.class);
 
         
     }
@@ -71,6 +74,11 @@ public class ServerMain extends SimpleApplication {
     {
         // TODO: Remove player from array/rootNode/etc
         
+    }
+    
+    public Player getPlayer(int id)
+    {
+        return players.get(id);
     }
     
     public boolean playerExists(int id)
@@ -99,10 +107,20 @@ public class ServerMain extends SimpleApplication {
         players.get(id).setRotation(rotation);
     }
     
-//    @Override
-//    public void simpleUpdate(float tpf) {
-//        //TODO: add update code
-//    }
+    @Override
+    public void simpleUpdate(float tpf) {
+        // TODO: update players?
+        // Update players
+        for(Player p : players.values())
+        {
+            p.update(tpf);
+        }
+        
+        // Update Bullets
+        
+        
+        // Check collisions
+    }
 
     @Override
     public void simpleRender(RenderManager rm) {

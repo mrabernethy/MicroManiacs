@@ -3,7 +3,6 @@ package mygame;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
-import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -40,9 +39,6 @@ public class ClientMain extends SimpleApplication {
         ClientMain app = new ClientMain();
         app.start(JmeContext.Type.Display);
     }
-    
-    /** Prepare the Physics Application State (jBullet) */
-    private BulletAppState bulletAppState;
   
     /** Prepare geometries and physical nodes*/
     private Node world;
@@ -87,11 +83,18 @@ public class ClientMain extends SimpleApplication {
             myClient.start();
         } catch (IOException ex) {}
         
-        /** Set up Physics Game */
-        bulletAppState = new BulletAppState();
-        stateManager.attach(bulletAppState);
-        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.81f));
-        //bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        // Register the message classes
+        Serializer.registerClass(ClientMessage.class);
+        Serializer.registerClass(GreetingMessage.class); 
+        Serializer.registerClass(ClientCommandMessage.class); 
+        // Add the message listeners
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                GreetingMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                ClientMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                ClientCommandMessage.class);
+        //myClient.addClientStateListener(this);
         
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
@@ -114,19 +117,6 @@ public class ClientMain extends SimpleApplication {
 //        JmeCursor c = new JmeCursor();
 //        IntBuffer image = new IntBuffer
 //        inputManager.setMouseCursor(JmeCursor.class.);
-        
-//        spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
-//        getStateManager().attach(spriteManager);
-        
-        // Register the message classes
-        Serializer.registerClass(ClientMessage.class);
-        Serializer.registerClass(GreetingMessage.class); 
-        // Add the message listeners
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                GreetingMessage.class);
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                ClientMessage.class);
-        //myClient.addClientStateListener(this);
         
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
@@ -174,27 +164,19 @@ public class ClientMain extends SimpleApplication {
         floor_geo.setMaterial(floor_mat);
         floor_geo.setLocalTranslation(0, 0, -0.1f);
         this.world.attachChild(floor_geo);
-        /* Make the floor physical with mass 0.0f! */
-        RigidBodyControl floor_phy = new RigidBodyControl(0.0f);
-        floor_geo.addControl(floor_phy);
-        bulletAppState.getPhysicsSpace().add(floor_phy);
         
         // Add Buildings
         // Just for testing/will want to generate a more organised world later
         for(int x = -3; x < 3; x++)
-            for(int y = -3; y < 3; y++)
+            for(int y = -2; y < 2; y++)
             {
                 Box building = new Box(0.7f, 0.7f, 0.7f);
                 Geometry building_geo = new Geometry("Building:" + x + "/" + y, building);
                 
                 Material building_mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
                 building_geo.setMaterial(building_mat);
-                building_geo.setLocalTranslation(x*6, y*6, -0.1f);
+                building_geo.setLocalTranslation(x*6, y*6, 0);
                 this.world.attachChild(building_geo);
-                
-                RigidBodyControl building_phy = new RigidBodyControl(0.0f);
-                building_geo.addControl(building_phy);
-                bulletAppState.getPhysicsSpace().add(building_phy);
             }
         
         // Attach world
@@ -326,39 +308,6 @@ public class ClientMain extends SimpleApplication {
         public void onAnalog(String name, float intensity, float tpf) {
             System.out.println("Mapping detected (analog): "+ name + " " + intensity );
             
-            if (name.equals(MAPPING_UP))
-            {
-                // Set player up velocity
-                //player.setVelocity(player.getVelocity().setY(2));
-                player.getGeometry().move(0,0.003f,0);
-                
-            }
-            
-            
-            if (name.equals(MAPPING_DOWN))
-            {
-                // Set player down velocity
-                //player.setVelocity(player.getVelocity().setY(-2));
-                player.getGeometry().move(0,-0.003f,0);
-                
-            }
-            
-            
-            if (name.equals(MAPPING_LEFT))
-            {
-                // Set player left velocity
-                //player.setVelocity(player.getVelocity().setX(-2));
-                player.getGeometry().move(-0.003f,0,0);
-            }
-            
-            
-            if (name.equals(MAPPING_RIGHT))
-            {
-                // Set player right velocity
-                //player.setVelocity(player.getVelocity().setX(2));
-                player.getGeometry().move(0.003f,0,0);
-            }
-            
         }
     };
     
@@ -367,7 +316,36 @@ public class ClientMain extends SimpleApplication {
         public void onAction(String name, boolean keyPressed, float tpf) {
         /** TODO: test for mapping names and implement actions */
             System.out.println("Mapping detected (discrete): "+ name);
-  
+            if(myClient.isConnected())
+            {
+                if (name.equals(MAPPING_UP) && keyPressed)
+                {
+                    // Set player up velocity
+                    //player.setVelocity(player.getVelocity().setY(2));
+                    //player.getGeometry().move(0,0.003f,0);
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_UP, myClient.getId()));
+                }
+                if(name.equals(MAPPING_DOWN)&& keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_DOWN, myClient.getId()));
+                }
+                if(name.equals(MAPPING_LEFT)&& keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_LEFT, myClient.getId()));
+                }
+                if(name.equals(MAPPING_RIGHT)&& keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.MOVE_RIGHT, myClient.getId()));
+                }
+                if((name.equals(MAPPING_UP) || name.equals(MAPPING_DOWN)) && !keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_UP_DOWN, myClient.getId()));
+                }
+                if((name.equals(MAPPING_LEFT) || name.equals(MAPPING_RIGHT)) && !keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_LEFT_RIGHT, myClient.getId()));
+                }
+            }
         }
     };
 
