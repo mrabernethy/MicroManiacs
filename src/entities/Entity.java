@@ -4,10 +4,10 @@
  */
 package entities;
 
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
-import com.jme3.scene.Node;
 
 /**
  *
@@ -69,6 +69,11 @@ public abstract class Entity {
     public void setGeometry(Geometry geom)
     {
         this.geom = geom;
+    }
+    
+    public RigidBodyControl getRigidBodyControl()
+    {
+        return this.geom.getControl(RigidBodyControl.class);
     }
     
     public void setPosition(Vector3f position)

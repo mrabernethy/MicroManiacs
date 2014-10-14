@@ -4,35 +4,26 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.control.RigidBodyControl;
-import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
-import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
-import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
-import com.jme3.network.ClientStateListener.DisconnectInfo;
 import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
-import engine.sprites.Sprite;
-import engine.sprites.SpriteImage;
-import engine.sprites.SpriteManager;
-import engine.sprites.SpriteMesh;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
@@ -53,18 +44,8 @@ public class ClientMain extends SimpleApplication {
     /** Prepare the Physics Application State (jBullet) */
     private BulletAppState bulletAppState;
   
-    /** Prepare Materials */
-    Material floor_mat;
-    
     /** Prepare geometries and physical nodes*/
-    private RigidBodyControl    floor_phy;
-    private static final Box    floor;
-    
-    static {
-    /** Initialize the floor geometry */
-    floor = new Box(10f, 10f, 0.1f);
-    floor.scaleTextureCoordinates(new Vector2f(1, 1));
-    }
+    private Node world;
     
     private Client myClient;
     private Vector3f lastSentPosition;
@@ -109,6 +90,7 @@ public class ClientMain extends SimpleApplication {
         /** Set up Physics Game */
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
+        bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.81f));
         //bulletAppState.getPhysicsSpace().enableDebug(assetManager);
         
         // Init Mappings and Listeners
@@ -149,19 +131,15 @@ public class ClientMain extends SimpleApplication {
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
         
-        
-        
-        myClient.send(new ClientMessage(this.cam.getLocation(), this.cam.getRotation(), myClient.getId()));
-        lastSentPosition = new Vector3f(this.cam.getLocation());
-        
-        
-        
         // TODO: attach the world
         //attachBackground();
         
         // Add player
         addPlayer(myClient.getId());
         player = (players.get(myClient.getId()));
+        // Send new player info to server
+        myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+        lastSentPosition = new Vector3f(player.getPosition());
         
         // Stop the camera moving
         this.flyCam.setEnabled(false);
@@ -172,32 +150,55 @@ public class ClientMain extends SimpleApplication {
         chaseCamera.setDefaultVerticalRotation(0);
         player.getGeometry().addControl(chaseCamera);
         
-        /** Initialize the scene, materials, and physics space */
-        initMaterials();
-        initFloor();
+        /** Initialize the scene*/
+        initWorld();
 //        initCrossHairs();
     }
     
-    /** Initialize the materials used in this scene. */
-    public void initMaterials() {
-        floor_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+    public void initWorld()
+    {
+        this.world = new Node();
+        
+        // Add base
+        Box floor = new Box(20f, 10f, 0.1f);
+        floor.scaleTextureCoordinates(new Vector2f(1, 1));
+        Geometry floor_geo = new Geometry("Floor", floor);
+        
+        Material floor_mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         TextureKey key3 = new TextureKey("Textures/testWorld.jpg");                                     //Terrain/Pond/Pond.jpg");
         key3.setGenerateMips(true);
         Texture tex3 = assetManager.loadTexture(key3);
         tex3.setWrap(Texture.WrapMode.Repeat);
         floor_mat.setTexture("ColorMap", tex3);
-    }
-    
-    /** Make a solid floor and add it to the scene. */
-    public void initFloor() {
-        Geometry floor_geo = new Geometry("Floor", floor);
+        
         floor_geo.setMaterial(floor_mat);
         floor_geo.setLocalTranslation(0, 0, -0.1f);
-        this.rootNode.attachChild(floor_geo);
+        this.world.attachChild(floor_geo);
         /* Make the floor physical with mass 0.0f! */
-        floor_phy = new RigidBodyControl(0.0f);
+        RigidBodyControl floor_phy = new RigidBodyControl(0.0f);
         floor_geo.addControl(floor_phy);
         bulletAppState.getPhysicsSpace().add(floor_phy);
+        
+        // Add Buildings
+        // Just for testing/will want to generate a more organised world later
+        for(int x = -3; x < 3; x++)
+            for(int y = -3; y < 3; y++)
+            {
+                Box building = new Box(0.7f, 0.7f, 0.7f);
+                Geometry building_geo = new Geometry("Building:" + x + "/" + y, building);
+                
+                Material building_mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+                building_geo.setMaterial(building_mat);
+                building_geo.setLocalTranslation(x*6, y*6, -0.1f);
+                this.world.attachChild(building_geo);
+                
+                RigidBodyControl building_phy = new RigidBodyControl(0.0f);
+                building_geo.addControl(building_phy);
+                bulletAppState.getPhysicsSpace().add(building_phy);
+            }
+        
+        // Attach world
+        this.rootNode.attachChild(world);
     }
     
 //    /** A plus sign used as crosshairs to help the player with aiming.*/
@@ -227,9 +228,10 @@ public class ClientMain extends SimpleApplication {
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         geom.setMaterial(mat);
         
-        Player p = new Player(new Vector3f(0,0,0), geom);
+        Player p = new Player(new Vector3f(2,0,0), geom);
         rootNode.attachChild(geom);
         players.put(id, p);
+        
     }
     
     public boolean playerExists(int id)
@@ -292,13 +294,13 @@ public class ClientMain extends SimpleApplication {
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
         player.setRotation(playerRotation);
         
-        collisionWithWall();
+        //collisionWithWall();
         // Send this players position every x movement distance
-//        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
-//        {
-//            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
+        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
+        {
+            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
             myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
-//        }
+        }
             
 //            initCrossHairs();
       
@@ -365,32 +367,7 @@ public class ClientMain extends SimpleApplication {
         public void onAction(String name, boolean keyPressed, float tpf) {
         /** TODO: test for mapping names and implement actions */
             System.out.println("Mapping detected (discrete): "+ name);
-            player = players.get(myClient.getId());                   // made player a class variable
-            
-            // UP
-            if(name.equals(MAPPING_UP) && !keyPressed)
-            {
-                // Set player left velocity
-                player.setVelocity(player.getVelocity().setY(0));
-            }
-            // DOWN
-            if(name.equals(MAPPING_DOWN) && !keyPressed)
-            {
-                // Set player right velocity
-                player.setVelocity(player.getVelocity().setY(0));
-            }
-            // LEFT
-            if(name.equals(MAPPING_LEFT) && !keyPressed)
-            {
-                // Set player up velocity
-                player.setVelocity(player.getVelocity().setX(0));
-            }
-            // RIGHT
-            if(name.equals(MAPPING_RIGHT) && !keyPressed)
-            {
-                // Set player down velocity
-                player.setVelocity(player.getVelocity().setX(0));
-            }
+  
         }
     };
 

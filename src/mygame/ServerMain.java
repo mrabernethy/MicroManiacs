@@ -1,14 +1,19 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
-import com.jme3.network.ConnectionListener;
-import com.jme3.network.HostedConnection;
+import com.jme3.material.Material;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector3f;
 import com.jme3.network.Network;
 import com.jme3.network.Server;
 import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
+import com.jme3.scene.Geometry;
+import com.jme3.scene.shape.Box;
 import com.jme3.system.JmeContext;
+import entities.Player;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 /**
@@ -23,6 +28,8 @@ public class ServerMain extends SimpleApplication {
         ServerMain app = new ServerMain();
         app.start(JmeContext.Type.Headless);
     }
+    
+    private HashMap<Integer, Player> players = new HashMap();
     
     private Server myServer;
     int connections = 0;
@@ -46,20 +53,7 @@ public class ServerMain extends SimpleApplication {
                 GreetingMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
                 ClientMessage.class);
-        //myServer.addConnectionListener(this);
-        
-        
-        // Extra message sending info...
-//        // The server can also send a message to all clients instead of just to one. Create
-//        // your message as before, and broadcast it to all clients using the following line:
-//        myServer.broadcast(message);
-//        // Use com.jme3.network.Filters to broadcast the message to an
-//        // explicit list of clients, from client1 to client3.
-//        myServer.broadcast( Filters.in( client1, client2,
-//            client3 ), message );
-//        // Broadcast to all clients except the listed client client4 by using:
-//        myServer.broadcast( Filters.notEqualTo( client4 ),
-//            message );
+
         
     }
 
@@ -71,6 +65,38 @@ public class ServerMain extends SimpleApplication {
             System.out.println("Server connections: " + connections);
             connectionsOld = connections;
         }
+    }
+    
+    public void removePlayer(int id)
+    {
+        // TODO: Remove player from array/rootNode/etc
+        
+    }
+    
+    public boolean playerExists(int id)
+    {
+        return players.containsKey(id);
+    }
+    
+    public void addPlayer(int id)
+    {
+        String idStr = "Player " + Integer.toString(id);
+        
+        Box b = new Box(0.5f,0.5f,0.1f);
+        Geometry geom = new Geometry(idStr, b);
+        //Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        //geom.setMaterial(mat);
+        
+        Player p = new Player(new Vector3f(2,0,0), geom);
+        rootNode.attachChild(geom);
+        players.put(id, p);
+        
+    }
+    
+    public void updatePlayer(int id, Vector3f position, Quaternion rotation)
+    {
+        players.get(id).setPosition(position);
+        players.get(id).setRotation(rotation);
     }
     
 //    @Override

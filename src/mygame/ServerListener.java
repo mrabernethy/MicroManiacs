@@ -1,6 +1,5 @@
 package mygame;
 
-import com.jme3.math.ColorRGBA;
 import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
@@ -51,11 +50,7 @@ implements MessageListener<HostedConnection>
             System.out.println("Server recieved position " + clientMessage.getPos().toString() 
                     + " and rotation " + clientMessage.getQuat().toString() + " from client #" + clientMessage.getClientID());
             
-            for(HostedConnection h : server.getConnections())
-            {
-                if(h.getId() != clientMessage.getClientID())
-                    h.send(clientMessage);
-            }
+            server.broadcast(clientMessage);
         }
     }
     
