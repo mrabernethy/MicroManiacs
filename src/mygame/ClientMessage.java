@@ -1,3 +1,7 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package mygame;
 
 import com.jme3.math.Quaternion;
@@ -13,7 +17,7 @@ import com.jme3.network.serializing.Serializable;
 public class ClientMessage extends AbstractMessage{
     
     private Vector3f pos;
-    private Quaternion rotation;
+    private Quaternion quat;
     private int clientID;
     
     public ClientMessage(){}
@@ -21,18 +25,18 @@ public class ClientMessage extends AbstractMessage{
     public ClientMessage(Vector3f pos, Quaternion quat, int clientID)
     {
         this.pos = pos;
-        this.rotation = quat;
+        this.quat = quat;
         this.clientID = clientID;
     }
     
-    public Vector3f getPosition()
+    public Vector3f getPos()
     {
         return this.pos;
     }
     
-    public Quaternion getRotation()
+    public Quaternion getQuat()
     {
-        return rotation;
+        return quat;
     }
     
     public int getClientID()

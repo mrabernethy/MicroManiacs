@@ -1,12 +1,15 @@
 package mygame;
 
+import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import java.util.concurrent.Callable;
 
 /**
- * 
+ *
  * @author Mike
  */
 public class ClientListener 
@@ -42,7 +45,7 @@ implements MessageListener<Client>
         {
             final ClientMessage clientMessage = (ClientMessage) message;
             
-            System.out.println("Client recieved position:" + clientMessage.getPosition() + " and rotation:" + clientMessage.getRotation()+ " for client #" + clientMessage.getClientID());
+            System.out.println("Client recieved position:" + clientMessage.getPos() + " and rotation:" + clientMessage.getQuat() + " for client #" + clientMessage.getClientID());
             
             app.enqueue(new Callable() {
                 public Void call()
@@ -52,18 +55,14 @@ implements MessageListener<Client>
                         app.addPlayer(clientMessage.getClientID());
                     }
             
-                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getPosition(), clientMessage.getRotation());
+                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getPos(), clientMessage.getQuat());
                     
                     return null;
                 }
             });
            
-            // TODO: add debugging toggle
-            System.out.println("Client #" + clientMessage.getClientID() + " sent position " + clientMessage.getPosition().toString());
+            
+            System.out.println("Client #" + clientMessage.getClientID() + " sent the position " + clientMessage.getPos().toString());
         }
     }
 }
-
-/*
- * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
- */

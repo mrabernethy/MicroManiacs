@@ -5,7 +5,7 @@ import com.jme3.network.serializing.Serializable;
 
 
 /**
- * 
+ *
  * @author Mike
  */
 @Serializable(id=0)
@@ -29,7 +29,3 @@ public class GreetingMessage extends AbstractMessage
         return greeting;
     }
 }
-
-/*
- * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
- */
