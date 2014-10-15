@@ -7,7 +7,7 @@ import com.jme3.network.MessageListener;
 import com.jme3.network.Server;
 
 /**
- *
+ * 
  * @author Mike
  */
 public class ServerListener 
@@ -48,8 +48,8 @@ implements MessageListener<HostedConnection>
         if(message instanceof ClientMessage)
         {
             ClientMessage clientMessage = (ClientMessage) message;
-            System.out.println("Server recieved position " + clientMessage.getPos().toString() 
-                    + " and rotation " + clientMessage.getQuat().toString() + " from client #" + clientMessage.getClientID());
+            System.out.println("Server recieved position " + clientMessage.getVelocity().toString() 
+                    + " and rotation " + clientMessage.getRotation().toString() + " from client #" + clientMessage.getClientID());
             
             for(HostedConnection h : server.getConnections())
             {
@@ -58,5 +58,8 @@ implements MessageListener<HostedConnection>
             }
         }
     }
-    
 }
+
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */

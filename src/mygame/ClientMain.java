@@ -5,46 +5,35 @@ import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
-import com.jme3.bullet.control.CharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
-import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
-import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Plane;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
-import com.jme3.network.ClientStateListener.DisconnectInfo;
 import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
-import com.jme3.scene.Mesh;
 import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
-import engine.sprites.Sprite;
-import engine.sprites.SpriteImage;
-import engine.sprites.SpriteManager;
-import engine.sprites.SpriteMesh;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
 
 /**
- *
+ * 
  * @author Mike
  */
 public class ClientMain extends SimpleApplication {
@@ -100,6 +89,8 @@ public class ClientMain extends SimpleApplication {
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
     
+    
+    
     private final static Trigger TRIGGER_W = new KeyTrigger(KeyInput.KEY_W);
     private final static Trigger TRIGGER_S = new KeyTrigger(KeyInput.KEY_S);
     private final static Trigger TRIGGER_A = new KeyTrigger(KeyInput.KEY_A);
@@ -130,7 +121,7 @@ public class ClientMain extends SimpleApplication {
         /** Set up Physics Game */
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
-        bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+        //bulletAppState.getPhysicsSpace().enableDebug(assetManager);
         bulletAppState.getPhysicsSpace().setGravity(new Vector3f(0,0,-9.8f));
         
         // Init Mappings and Listeners
@@ -142,21 +133,16 @@ public class ClientMain extends SimpleApplication {
         //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
         
         // TODO: add space mapping to listener
-        // Listener for click events ie. shoot bullet
-        inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT});
         // Listener for push events ie. move up
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
+            MAPPING_LEFT, MAPPING_RIGHT});
+        // Listener for click events ie. shoot bullet
+        inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
         
         // Set cursor visible
         inputManager.setCursorVisible(true);
-//        JmeCursor c = new JmeCursor();
-//        IntBuffer image = new IntBuffer
-//        inputManager.setMouseCursor(JmeCursor.class.);
-        
-//        spriteManager = new SpriteManager(1024, 1024, SpriteMesh.Strategy.ALLOCATE_NEW_BUFFER, rootNode, assetManager);
-//        getStateManager().attach(spriteManager);
+     
         
         // Register the message classes
         Serializer.registerClass(ClientMessage.class);
@@ -170,17 +156,12 @@ public class ClientMain extends SimpleApplication {
         
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
-        
-        
-        
+        // TODO: this location is being set as the player's initial velocity - 
+        // need to modify messages
         myClient.send(new ClientMessage(this.cam.getLocation(), this.cam.getRotation(), myClient.getId()));
         lastSentPosition = new Vector3f(this.cam.getLocation());
         
-        
-        
-        // TODO: attach the world
-        //attachBackground();
-        
+             
         /** Initialize the scene, materials, and physics space */
         initMaterials();
         initFloor();
@@ -245,7 +226,7 @@ public class ClientMain extends SimpleApplication {
 //    protected void initCrossHairs() {
 //        guiNode.detachAllChildren();
 //        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
-//        BitmapText ch = new BitmapText(guiFont, false);
+//        ch = new BitmapText(guiFont, false);
 //        ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
 //        ch.setText("+");        // fake crosshairs :)
 ////        ch.setLocalTranslation( // center
@@ -274,7 +255,7 @@ public class ClientMain extends SimpleApplication {
         /** Make player physical with a mass > 0.0f. */
         //player_phy = new RigidBodyControl();
         CapsuleCollisionShape capsuleShape = new CapsuleCollisionShape(0.5f, 0.5f, 2);
-        player_phy = new RigidBodyControl(capsuleShape, 100f);
+        player_phy = new RigidBodyControl(capsuleShape, 50f);
         player_phy.setAngularFactor(0f);
         //player_phy.setKinematic(true);
 
@@ -309,12 +290,13 @@ public class ClientMain extends SimpleApplication {
         return players.containsKey(id);
     }
     
-    public void updatePlayer(int id, Vector3f position, Quaternion rotation)
+    public void updatePlayer(int id, Vector3f velocity, Quaternion rotation)
     {
 //        if (id != myClient.getId())
 //        {
-            players.get(id).getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(position);
-            players.get(id).getGeometry().getControl(RigidBodyControl.class).setPhysicsRotation(rotation);
+        
+            players.get(id).setVelocity(velocity);
+            players.get(id).setRotation(rotation);
 //        }
     }
     
@@ -366,17 +348,17 @@ public class ClientMain extends SimpleApplication {
         Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
         float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
         Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
-        player.getGeometry().getControl(RigidBodyControl.class).setPhysicsRotation(playerRotation);
+        player.setRotation(playerRotation);
         
         //collisionWithWall();
         // Send this players position every x movement distance
 //        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
 //        {
 //            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
-            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+            myClient.send(new ClientMessage(player.getVelocity(), player.getRotation(), myClient.getId()));
 //        }
             
-//            initCrossHairs();
+            
       
     }
 
@@ -398,7 +380,7 @@ public class ClientMain extends SimpleApplication {
     // use for mouse rotation and maybe vehicle acceleration
     private AnalogListener analogListener = new AnalogListener() {
         public void onAnalog(String name, float intensity, float tpf) {
-            System.out.println("Mapping detected (analog): "+ name + " " + intensity );
+            System.out.println("Mapping detected (analog): "+ name + " " + intensity + " " + tpf);
             
             if (name.equals(MAPPING_UP))
             {
@@ -408,7 +390,9 @@ public class ClientMain extends SimpleApplication {
 //                Vector3f v = player.getPosition();
 //                v.y += 0.03f;
 //                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,10f,0));
+                Vector3f v = player.getVelocity();
+                v.y = 10f;
+                player.setVelocity(v);
                 
                 
             }
@@ -422,8 +406,9 @@ public class ClientMain extends SimpleApplication {
 //                Vector3f v = player.getPosition();
 //                v.y -= 0.03f;
 //                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,-10f,0));
-                
+                Vector3f v = player.getVelocity();
+                v.y = -10f;
+                player.setVelocity(v);
             }
             
             
@@ -435,7 +420,9 @@ public class ClientMain extends SimpleApplication {
 //                Vector3f v = player.getPosition();
 //                v.x -= 0.03f;
 //                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(-10f,0,0));
+                Vector3f v = player.getVelocity();
+                v.x = -10f;
+                player.setVelocity(v);
             }
             
             
@@ -443,11 +430,13 @@ public class ClientMain extends SimpleApplication {
             {
                 // Set player right velocity
                 //player.setVelocity(player.getVelocity().setX(2));
-                player.getGeometry().move(0.03f,0,0);
+                //player.getGeometry().move(0.03f,0,0);
 //                Vector3f v = player.getPosition();
 //                v.x += 0.03f;
 //                player.getGeometry().getControl(RigidBodyControl.class).setPhysicsLocation(v);
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(10f,0,0));
+                Vector3f v = player.getVelocity();
+                v.x = 10f;
+                player.setVelocity(v);
             }
             
         }
@@ -457,38 +446,51 @@ public class ClientMain extends SimpleApplication {
     private ActionListener actionListener = new ActionListener() {
         public void onAction(String name, boolean keyPressed, float tpf) {
         /** TODO: test for mapping names and implement actions */
+            // TODO: add debugging toggle
             System.out.println("Mapping detected (discrete): "+ name);
-            //player = players.get(myClient.getId());                   // made player a class variable
+            //player = players.get(myClient.getId());                   
             
             // UP
             if(name.equals(MAPPING_UP) && !keyPressed)
             {
                 // Set player left velocity
                 //player.setVelocity(player.getVelocity().setY(0));
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
+                Vector3f v = player.getVelocity();
+                v.y = 0f;
+                player.setVelocity(v);
+                
             }
             // DOWN
             if(name.equals(MAPPING_DOWN) && !keyPressed)
             {
                 // Set player right velocity
                 //player.setVelocity(player.getVelocity().setY(0));
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
+                Vector3f v = player.getVelocity();
+                v.y = 0f;
+                player.setVelocity(v);
             }
             // LEFT
             if(name.equals(MAPPING_LEFT) && !keyPressed)
             {
                 // Set player up velocity
                 //player.setVelocity(player.getVelocity().setX(0));
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
+                Vector3f v = player.getVelocity();
+                v.x = 0f;
+                player.setVelocity(v);
             }
             // RIGHT
             if(name.equals(MAPPING_RIGHT) && !keyPressed)
             {
                 // Set player down velocity
                 //player.setVelocity(player.getVelocity().setX(0));
-                player.getGeometry().getControl(RigidBodyControl.class).setLinearVelocity(new Vector3f(0,0,0));
+                Vector3f v = player.getVelocity();
+                v.x = 0f;
+                player.setVelocity(v);
             }
         }
     };
-
 }
+
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */
