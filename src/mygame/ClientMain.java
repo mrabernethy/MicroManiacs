@@ -10,6 +10,7 @@ import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.Trigger;
 import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
@@ -21,8 +22,10 @@ import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
+import entities.Bullet;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
@@ -55,6 +58,7 @@ public class ClientMain extends SimpleApplication {
     
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
+    private HashMap<Integer, Bullet> bullets = new HashMap();
     
     private final static Trigger TRIGGER_W = new KeyTrigger(KeyInput.KEY_W);
     private final static Trigger TRIGGER_S = new KeyTrigger(KeyInput.KEY_S);
@@ -65,18 +69,18 @@ public class ClientMain extends SimpleApplication {
     private final static Trigger TRIGGER_LEFT = new KeyTrigger(KeyInput.KEY_LEFT);
     private final static Trigger TRIGGER_RIGHT = new KeyTrigger(KeyInput.KEY_RIGHT);
     // TODO: add shoot -- on click or space?
-    //private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
+    private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
     
     private final static String  MAPPING_UP = "Up";
     private final static String  MAPPING_DOWN = "Down";
     private final static String  MAPPING_LEFT = "Left";
     private final static String  MAPPING_RIGHT = "Right";
-    //private final static String  MAPPING_SHOOT = "Shoot";
+    private final static String  MAPPING_SHOOT = "Shoot";
     
     @Override
     public void simpleInitApp() 
     { 
-        Serializer.registerClass(ClientMessage.class);
+        Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
         Serializer.registerClass(ClientCommandMessage.class); 
         
@@ -93,7 +97,7 @@ public class ClientMain extends SimpleApplication {
         myClient.addMessageListener(new ClientListener(this, myClient),
                 GreetingMessage.class);
         myClient.addMessageListener(new ClientListener(this, myClient),
-                ClientMessage.class);
+                UpdateMessage.class);
         myClient.addMessageListener(new ClientListener(this, myClient),
                 ClientCommandMessage.class);
         //myClient.addClientStateListener(this);
@@ -104,12 +108,12 @@ public class ClientMain extends SimpleApplication {
         inputManager.addMapping(MAPPING_LEFT, TRIGGER_A, TRIGGER_LEFT);
         inputManager.addMapping(MAPPING_RIGHT, TRIGGER_D, TRIGGER_RIGHT);
         // TODO: add mapping for mouse buttons
-        //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
+        inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
         
         // TODO: add space mapping to listener
         // Listener for click events ie. shoot bullet
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT});
+            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_SHOOT});
         // Listener for push events ie. move up
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
@@ -233,6 +237,32 @@ public class ClientMain extends SimpleApplication {
         //players.remove(id).getSprite().delete();
     }
     
+    public void addBullet(int owner_id, int bullet_id)
+    {
+        String idStr = "Bullet " + bullet_id +" of player " + owner_id;
+        
+        Sphere sphere = new Sphere(32,32, 0.2f);
+        Geometry geom = new Geometry(idStr, sphere);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.Blue);
+        geom.setMaterial(mat);
+        
+        Player shooter = players.get(owner_id);
+        Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id, owner_id);
+        rootNode.attachChild(geom);
+        bullets.put(bullet_id, b);
+    }
+    
+    public boolean bulletExists(int bullet_id)
+    {
+        return bullets.containsKey(bullet_id);
+    }
+    
+    public void updateBullet(int bullet_id, Vector3f position)
+    {
+        bullets.get(bullet_id).setPosition(position);
+    }
+    
     public void collisionWithWall()
     {
         topY = new Vector3f(player.getPosition());
@@ -305,7 +335,7 @@ public class ClientMain extends SimpleApplication {
     // use for mouse rotation and maybe vehicle acceleration
     private AnalogListener analogListener = new AnalogListener() {
         public void onAnalog(String name, float intensity, float tpf) {
-            System.out.println("Mapping detected (analog): "+ name + " " + intensity );
+            //System.out.println("Mapping detected (analog): "+ name + " " + intensity );
             
         }
     };
@@ -317,6 +347,10 @@ public class ClientMain extends SimpleApplication {
             System.out.println("Mapping detected (discrete): "+ name);
             if(myClient.isConnected())
             {
+                // Get key pressed
+                // Send command
+                // Update rotation each time a command is sent
+                
                 if (name.equals(MAPPING_UP) && keyPressed)
                 {
                     // Set player up velocity
@@ -343,6 +377,10 @@ public class ClientMain extends SimpleApplication {
                 if((name.equals(MAPPING_LEFT) || name.equals(MAPPING_RIGHT)) && !keyPressed)
                 {
                     myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_LEFT_RIGHT, player.getRotation(), myClient.getId()));
+                }
+                if(name.equals(MAPPING_SHOOT) && keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.SHOOT, player.getRotation(), myClient.getId()));
                 }
             }
         }

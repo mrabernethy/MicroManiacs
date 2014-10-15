@@ -1,8 +1,5 @@
 package mygame;
 
-import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
-import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
@@ -41,28 +38,38 @@ implements MessageListener<Client>
                     + greetingMessage.getGreeting() + "'");
         }
         
-        if(message instanceof ClientMessage)
+        if(message instanceof UpdateMessage)
         {
-            final ClientMessage clientMessage = (ClientMessage) message;
-            
-            System.out.println("Client recieved position:" + clientMessage.getPos() + " and rotation:" + clientMessage.getQuat() + " for client #" + clientMessage.getClientID());
+            final UpdateMessage updateMessage = (UpdateMessage) message;
             
             app.enqueue(new Callable() {
                 public Void call()
                 {
-                    if(!app.playerExists(clientMessage.getClientID()))
+                    if(updateMessage.getToUpdate().equals("Player"))
                     {
-                        app.addPlayer(clientMessage.getClientID());
+                        System.out.println("Client recieved position:" + updateMessage.getPos() + " and rotation:" + updateMessage.getQuat() + " for player #" + updateMessage.getUpdateID());
+                        
+                        if(!app.playerExists(updateMessage.getUpdateID()))
+                        {
+                            app.addPlayer(updateMessage.getUpdateID());
+                        }
+
+                        app.updatePlayer(updateMessage.getUpdateID(), updateMessage.getPos(), updateMessage.getQuat());
                     }
-            
-                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getPos(), clientMessage.getQuat());
-                    
+                    if(updateMessage.getToUpdate().equals("Bullet"))
+                    {
+                        System.out.println("Client recieved position:" + updateMessage.getPos() + " for bullet #" + updateMessage.getUpdateID());
+                        
+                        if(!app.bulletExists(updateMessage.getUpdateID()))
+                        {
+                            app.addBullet(updateMessage.getClientID(), updateMessage.getUpdateID());
+                        }
+                        
+                        app.updateBullet(updateMessage.getUpdateID(), updateMessage.getPos());
+                    }
                     return null;
                 }
             });
-           
-            
-            System.out.println("Client #" + clientMessage.getClientID() + " sent the position " + clientMessage.getPos().toString());
         }
     }
 }

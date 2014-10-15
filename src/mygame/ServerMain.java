@@ -3,6 +3,7 @@ package mygame;
 import com.jme3.app.SimpleApplication;
 import com.jme3.collision.CollisionResults;
 import com.jme3.material.Material;
+import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
@@ -14,7 +15,9 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
+import entities.Bullet;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,6 +39,8 @@ public class ServerMain extends SimpleApplication {
     }
     
     private HashMap<Integer, Player> players = new HashMap();
+    private HashMap<Integer, Bullet> bullets = new HashMap();
+    private int bulletIDCounter = 0;
     
     private Node world;
     
@@ -46,7 +51,7 @@ public class ServerMain extends SimpleApplication {
     @Override
     public void simpleInitApp() 
     {
-        Serializer.registerClass(ClientMessage.class);
+        Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
         Serializer.registerClass(ClientCommandMessage.class); 
         
@@ -62,7 +67,7 @@ public class ServerMain extends SimpleApplication {
         myServer.addMessageListener(new ServerListener(this, myServer),
                 GreetingMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
-                ClientMessage.class);
+                UpdateMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
                 ClientCommandMessage.class);
         
@@ -144,11 +149,26 @@ public class ServerMain extends SimpleApplication {
         players.put(id, p);
     }
     
-    public void updatePlayer(int id, Vector3f position, Quaternion rotation)
+    public void addBullet(int owner_id)
     {
-        players.get(id).setPosition(position);
-        players.get(id).setRotation(rotation);
+        int bullet_id = bulletIDCounter++;
+        
+        String idStr = "Bullet " + bullet_id + " of player " + owner_id;
+        
+        Sphere sphere = new Sphere(36, 36, 0.3f);
+        Geometry geom = new Geometry(idStr, sphere);
+        
+        Player shooter = players.get(owner_id);
+        Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id,owner_id);
 
+        Quaternion quat = new Quaternion();
+        quat.fromAngleAxis(shooter.getRotation().getZ() * FastMath.PI, Vector3f.UNIT_Z);
+        Vector3f bulletVelocity = new Vector3f(3, 0 , 0);
+        quat.mult(bulletVelocity, bulletVelocity);
+      
+        b.setVelocity(bulletVelocity);
+        rootNode.attachChild(geom);
+        bullets.put(bullet_id, b);
     }
     
     @Override
@@ -183,11 +203,15 @@ public class ServerMain extends SimpleApplication {
 
         @Override
         public void run() {
-            for(Player p : players.values())
+            
+            // Player collisions/updates
+            for(int i = 0; i < players.size(); i++)
             {
+                Player p = players.get(i);
                 
                 boolean collision = false;
                 
+                // Player - Player Collisions
                 for(Player p2 : players.values())
                 {
                     CollisionResults results = new CollisionResults();
@@ -204,6 +228,7 @@ public class ServerMain extends SimpleApplication {
                     }
                 }
                 
+                // Player - World Objects collisions
                 for(Spatial spatial : world.getChildren())
                 {
                     CollisionResults results = new CollisionResults();
@@ -214,15 +239,53 @@ public class ServerMain extends SimpleApplication {
                     if(results.size() > 0)
                     {
                         //collision = true; 
-                        p.setVelocity(p.getVelocity().negate().divide(2));
+                        p.setVelocity(p.getVelocity().negate().divide(1.5f));
                     }
                 }
-                
+
+                // Update player
                 //if(!collision)
                     p.update(0.03f);
 
+                // Broadcast new player info
+                myServer.broadcast(new UpdateMessage("Player", p.getPosition(), p.getRotation(), p.getID(), p.getID()));
+            }
+            
+            // Bullet collisions/updates
+            for(int i = 0; i < bullets.size(); i++)
+            {
+                Bullet b = bullets.get(i);
                 
-                myServer.broadcast(new ClientMessage(p.getPosition(), p.getRotation(), p.getID()));
+                // Bullet - Player collision
+                for(Player p : players.values())
+                {
+                    CollisionResults results = new CollisionResults();
+                    b.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
+                    
+                    if(results.size() > 0)
+                    {
+                        //collision = true;
+                        //b.setVelocity(new Vector3f(0,0,0));
+                    }
+                }
+                
+                for(Spatial spatial : world.getChildren())
+                {
+                    CollisionResults results = new CollisionResults();
+                    
+                    if(!spatial.getName().equals("Floor"))
+                        b.getGeometry().collideWith(spatial.getWorldBound(), results);
+                    
+                    if(results.size() > 0)
+                    {
+                        //collision = true; 
+                        //b.setVelocity(new Vector3f(0,0,0));
+                    }
+                }
+                
+                b.update(0.03f);
+                
+                myServer.broadcast(new UpdateMessage("Bullet", b.getPosition(), b.getRotation(), b.getID(), b.getOwnerID()));
             }
             
             

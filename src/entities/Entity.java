@@ -24,13 +24,17 @@ public abstract class Entity {
 
     private boolean alive;
     
+    private int entityID;
     
-    public Entity(Vector3f position, Geometry geom)
+    
+    public Entity(Vector3f position, Geometry geom, int id)
     {
         this.geom = geom;
         this.geom.setLocalTranslation(position);
         this.velocity = new Vector3f();
         this.acceleration = new Vector3f();
+        this.entityID = id;
+        this.alive = true;
     }
     
     public void setAcceleration(Vector3f acceleration)
@@ -108,5 +112,20 @@ public abstract class Entity {
     public Vector3f getPosition()
     {
         return this.geom.getLocalTranslation();
+    }
+    
+    public int getID()
+    {
+        return this.entityID;
+    }
+    
+    public void setAlive(boolean alive)
+    {
+        this.alive = alive;
+    }
+    
+    public boolean getAlive()
+    {
+        return this.alive;
     }
 }

@@ -44,9 +44,9 @@ implements MessageListener<HostedConnection>
             source.send(greetingMessage);                                       // returns the message
         }
         
-        if(message instanceof ClientMessage)
+        if(message instanceof UpdateMessage)
         {
-            final ClientMessage clientMessage = (ClientMessage) message;
+            final UpdateMessage clientMessage = (UpdateMessage) message;
             //System.out.println("Server recieved rotation " + clientMessage.getQuat().toString() + " from client #" + clientMessage.getClientID());
             
         }
@@ -56,11 +56,14 @@ implements MessageListener<HostedConnection>
             final ClientCommandMessage cmdMessage = (ClientCommandMessage) message;
            System.out.println("Server recieved command " + cmdMessage.getCommand().toString() + " from client #" + cmdMessage.getClientID());
             
+
             if(cmdMessage.getCommand().equals(ClientCommand.ADD_PLAYER))
             {
                 app.addPlayer(cmdMessage.getClientID());
             }
-
+            
+            app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
+            
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_UP))
             {
                 app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(2);
@@ -85,9 +88,12 @@ implements MessageListener<HostedConnection>
             {
                 app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(0);
             }
+            if(cmdMessage.getCommand().equals(ClientCommand.SHOOT))
+            {
+                app.addBullet(cmdMessage.getClientID());
+            }
             
-            app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
-            
+                    System.out.println(app.getPlayer(cmdMessage.getClientID()).getRotation().getW());
         }
     }
     

@@ -14,19 +14,28 @@ import com.jme3.network.serializing.Serializable;
  * @author Taylor
  */
 @Serializable(id=0)
-public class ClientMessage extends AbstractMessage{
+public class UpdateMessage extends AbstractMessage{
     
+    private String toUpdate;
     private Vector3f pos;
     private Quaternion quat;
+    private int updateID;
     private int clientID;
     
-    public ClientMessage(){}
+    public UpdateMessage(){}
     
-    public ClientMessage(Vector3f pos, Quaternion quat, int clientID)
+    public UpdateMessage(String toUpdate, Vector3f pos, Quaternion quat, int updateID, int clientID)
     {
+        this.toUpdate = toUpdate;
         this.pos = pos;
         this.quat = quat;
+        this.updateID = updateID;
         this.clientID = clientID;
+    }
+    
+    public String getToUpdate()
+    {
+        return this.toUpdate;
     }
     
     public Vector3f getPos()
@@ -39,10 +48,14 @@ public class ClientMessage extends AbstractMessage{
         return quat;
     }
     
+    public int getUpdateID()
+    {
+        return this.updateID;
+    }
+    
     public int getClientID()
     {
         return this.clientID;
     }
-    
     
 }

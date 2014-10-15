@@ -13,16 +13,9 @@ import com.jme3.scene.Geometry;
  */
 public class Player extends Entity{
 
-    private int id;
-    
     public Player(Vector3f position, Geometry geom, int id)                            //, SpriteImage spriteImage)
     {
-        super(position, geom);                                          //, spriteImage);
-        this.id = id;
+        super(position, geom, id);                                          //, spriteImage);
     }
-    
-    public int getID()
-    {
-        return id;
-    }
+
 }
