@@ -3,6 +3,10 @@ package mygame;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
 import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
+import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -29,7 +33,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 
 /**
- *
+ * 
  * @author Mike
  */
 public class ClientMain extends SimpleApplication {
@@ -39,12 +43,32 @@ public class ClientMain extends SimpleApplication {
         ClientMain app = new ClientMain();
         app.start(JmeContext.Type.Display);
     }
+    
+    private static final Box box;
+    private static final Box floor;
+    private static final Box test_box;
+    
+       /** Dimensions used for player box */
+    private static final float playerLength = 0.5f;
+    private static final float playerWidth  = 0.5f;
+    private static final float playerHeight = 0.5f;
+    
+    static {
+    /** Initialize the player geometry */
+    box = new Box(playerLength, playerHeight, playerWidth);
+    box.scaleTextureCoordinates(new Vector2f(1f, .5f));
+    /** Initialize the floor geometry */
+    floor = new Box(10,10,0.1f);                                                // TODO: not sure why player doesn't fall off floor
+    floor.scaleTextureCoordinates(new Vector2f(1f, 1f));                            // Don't think the texture perfectly covers the floor box
+    /** Initialize the test box */
+    test_box = new Box(1,1,1);
+    test_box.scaleTextureCoordinates(new Vector2f(1f, .5f));
+    }
   
     /** Prepare geometries and physical nodes*/
     private Node world;
     
     private Client myClient;
- 
     private Vector3f topY;
     private Vector3f bottomY;
     private Vector3f leftX;
@@ -95,6 +119,7 @@ public class ClientMain extends SimpleApplication {
         myClient.addMessageListener(new ClientListener(this, myClient),
                 ClientCommandMessage.class);
         //myClient.addClientStateListener(this);
+        /** Set up Physics Game */
         
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
@@ -105,11 +130,11 @@ public class ClientMain extends SimpleApplication {
         //inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
         
         // TODO: add space mapping to listener
-        // Listener for click events ie. shoot bullet
-        inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT});
         // Listener for push events ie. move up
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
+            MAPPING_LEFT, MAPPING_RIGHT});
+        // Listener for click events ie. shoot bullet
+        inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
         
         // Set cursor visible
@@ -117,7 +142,7 @@ public class ClientMain extends SimpleApplication {
 //        JmeCursor c = new JmeCursor();
 //        IntBuffer image = new IntBuffer
 //        inputManager.setMouseCursor(JmeCursor.class.);
-        
+
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
         
@@ -140,9 +165,11 @@ public class ClientMain extends SimpleApplication {
         player.getGeometry().addControl(chaseCamera);
         
         /** Initialize the scene*/
+        // initMaterials();
         initWorld();
 //        initCrossHairs();
     }
+    
     
     public void initWorld()
     {
@@ -186,7 +213,7 @@ public class ClientMain extends SimpleApplication {
 //    protected void initCrossHairs() {
 //        guiNode.detachAllChildren();
 //        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
-//        BitmapText ch = new BitmapText(guiFont, false);
+//        ch = new BitmapText(guiFont, false);
 //        ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
 //        ch.setText("+");        // fake crosshairs :)
 ////        ch.setLocalTranslation( // center
@@ -204,13 +231,20 @@ public class ClientMain extends SimpleApplication {
     {
         String idStr = "Player " + Integer.toString(id);
         
-        Box b = new Box(0.5f,0.5f,0.1f);
-        Geometry geom = new Geometry(idStr, b);
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
-        geom.setMaterial(mat);
         
-        Player p = new Player(new Vector3f(2,0,0), geom, id);
-        rootNode.attachChild(geom);
+        /** Create a player geometry and attach to scene graph. */
+        Geometry player_geo = new Geometry(idStr, box);
+        Material player_mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        player_geo.setMaterial(player_mat);
+        rootNode.attachChild(player_geo);
+        /** Position the player geometry  */                                        // TODO: set the initial or respawned position
+        //player_geo.setLocalTranslation(loc);
+        /** Make player physical with a mass > 0.0f. */
+        //player_phy = new RigidBodyControl();
+
+        
+        // Create a new player and add to collection
+        Player p = new Player(new Vector3f(2,0,0), player_geo, id);                     // TODO: Cane remove vector from player class?
         players.put(id, p);
         
     }
@@ -224,6 +258,10 @@ public class ClientMain extends SimpleApplication {
     {
         players.get(id).setPosition(position);
         players.get(id).setRotation(rotation);
+//        if (id != myClient.getId())
+//        {
+            
+//        }
     }
     
     // TODO: update function
@@ -282,7 +320,7 @@ public class ClientMain extends SimpleApplication {
 //            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
 //        }
             
-//            initCrossHairs();
+            
       
     }
 
@@ -304,8 +342,8 @@ public class ClientMain extends SimpleApplication {
     // use for mouse rotation and maybe vehicle acceleration
     private AnalogListener analogListener = new AnalogListener() {
         public void onAnalog(String name, float intensity, float tpf) {
-            System.out.println("Mapping detected (analog): "+ name + " " + intensity );
-            
+            System.out.println("Mapping detected (analog): "+ name + " " + intensity + " " + tpf);
+                
         }
     };
     
@@ -313,9 +351,10 @@ public class ClientMain extends SimpleApplication {
     private ActionListener actionListener = new ActionListener() {
         public void onAction(String name, boolean keyPressed, float tpf) {
         /** TODO: test for mapping names and implement actions */
+            // TODO: add debugging toggle
             System.out.println("Mapping detected (discrete): "+ name);
-            if(myClient.isConnected())
-            {
+            //player = players.get(myClient.getId());                   
+
                 if (name.equals(MAPPING_UP) && keyPressed)
                 {
                     // Set player up velocity
@@ -343,8 +382,10 @@ public class ClientMain extends SimpleApplication {
                 {
                     myClient.send(new ClientCommandMessage(ClientCommand.STOP_MOVE_LEFT_RIGHT, player.getRotation(), myClient.getId()));
                 }
-            }
         }
     };
-
 }
+
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */

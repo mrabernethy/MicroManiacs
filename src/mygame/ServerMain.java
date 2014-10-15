@@ -18,8 +18,8 @@ import java.util.TimerTask;
 import java.util.logging.Level;
 
 /**
- * test
- * @author normenhansen
+ * 
+ * @author Mike
  */
 public class ServerMain extends SimpleApplication {
     
@@ -158,3 +158,6 @@ public class ServerMain extends SimpleApplication {
 
 }
 
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */

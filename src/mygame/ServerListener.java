@@ -1,12 +1,14 @@
 package mygame;
 
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector3f;
 import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import com.jme3.network.Server;
 
 /**
- *
+ * 
  * @author Mike
  */
 public class ServerListener 
@@ -46,9 +48,17 @@ implements MessageListener<HostedConnection>
         
         if(message instanceof ClientMessage)
         {
-            final ClientMessage clientMessage = (ClientMessage) message;
+            ClientMessage clientMessage = (ClientMessage) message;
             //System.out.println("Server recieved rotation " + clientMessage.getQuat().toString() + " from client #" + clientMessage.getClientID());
-            
+ 
+            System.out.println("Server recieved position " + clientMessage.getPosition().toString() 
+                    + " and rotation " + clientMessage.getRotation().toString() + " from client #" + clientMessage.getClientID());
+            if(!app.playerExists(clientMessage.getClientID()))
+            {
+                System.out.println("Client # " + clientMessage.getClientID() + " player doesn't exist, adding it");
+                app.addPlayer(clientMessage.getClientID());
+            }
+            app.updatePlayer(clientMessage.getClientID(), clientMessage.getPosition(), clientMessage.getRotation());
         }
         
         if(message instanceof ClientCommandMessage)
@@ -58,25 +68,25 @@ implements MessageListener<HostedConnection>
               
             if(!app.playerExists(cmdMessage.getClientID()))
             {
-                System.out.println("Doesn't Exist");
+                System.out.println("Client # " + cmdMessage.getClientID() + " player doesn't exist, adding it");
                 app.addPlayer(cmdMessage.getClientID());
             }
 
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_UP))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(3);
+                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(10);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_DOWN))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(-3);
+                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(-10);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_LEFT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(-3);
+                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(-10);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_RIGHT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(3);
+                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(10);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.STOP_MOVE_LEFT_RIGHT))
             {
@@ -88,8 +98,13 @@ implements MessageListener<HostedConnection>
             }
             
             app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
+            System.out.println(app.getPlayer(cmdMessage.getClientID()).getRigidBodyControl().getPhysicsLocation());
+            //System.out.println(app.getPlayer(cmdMessage.getClientID()).get)
             
         }
     }
-    
 }
+
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */

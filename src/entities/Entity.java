@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package entities;
 
 import com.jme3.bullet.control.RigidBodyControl;
@@ -31,25 +27,25 @@ public abstract class Entity {
 
     public void setVelocity(Vector3f velocity)
     {
-        this.velocity = velocity;
+        getRigidBodyControl().setLinearVelocity(velocity);
     }
     
     public Vector3f getVelocity()
     {
-        return this.velocity;
+        return getRigidBodyControl().getLinearVelocity();
     }
     
     
-    public void update(float deltaTime)
-    {
-        Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
-        
-        newPos.x += deltaTime * velocity.x;
-        newPos.y += deltaTime * velocity.y;
-        newPos.z += deltaTime * velocity.z;
-        
-        setPosition(newPos);
-    }
+//    public void update(float deltaTime)
+//    {
+//        Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
+//        
+//        newPos.x += deltaTime * velocity.x;
+//        newPos.y += deltaTime * velocity.y;
+//        newPos.z += deltaTime * velocity.z;
+//        
+//        setPosition(newPos);
+//    }
     
     public void setRotation(Quaternion rotation)
     {

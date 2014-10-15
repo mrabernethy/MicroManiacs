@@ -1,7 +1,7 @@
 package mygame;
 
 /**
- *
+ * 
  * @author Mike
  */
 public class Globals 
@@ -12,3 +12,7 @@ public class Globals
     public static final int DEFAULT_PORT = 6143;
     
 }
+
+/*
+ * Class adapted from Kusterer, R. (2013). JMonkeyEngine 3.0 Beginner's Guide. Packt Publishing Ltd.
+ */
