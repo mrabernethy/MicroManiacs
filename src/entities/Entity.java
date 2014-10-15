@@ -59,23 +59,26 @@ public abstract class Entity {
     
     public void update(float deltaTime)
     {
-        Vector3f newVel = new Vector3f(getVelocity().x, getVelocity().y, getVelocity().z);
-        Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
-        
-        newVel.x += deltaTime * acceleration.x;
-        newVel.y += deltaTime * acceleration.y;
-        newVel.z += deltaTime * acceleration.z;
-        
-        if(newVel.length() < terminalVelocity)
+        if(alive)
         {
-            setVelocity(newVel);
+            Vector3f newVel = new Vector3f(getVelocity().x, getVelocity().y, getVelocity().z);
+            Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
+
+            newVel.x += deltaTime * acceleration.x;
+            newVel.y += deltaTime * acceleration.y;
+            newVel.z += deltaTime * acceleration.z;
+
+            if(newVel.length() < terminalVelocity)
+            {
+                setVelocity(newVel);
+            }
+
+            newPos.x += deltaTime * velocity.x;
+            newPos.y += deltaTime * velocity.y;
+            newPos.z += deltaTime * velocity.z;
+
+            setPosition(newPos);
         }
-        
-        newPos.x += deltaTime * velocity.x;
-        newPos.y += deltaTime * velocity.y;
-        newPos.z += deltaTime * velocity.z;
-        
-        setPosition(newPos);
     }
     
     public void setRotation(Quaternion rotation)

@@ -159,7 +159,7 @@ public class ServerMain extends SimpleApplication {
         Geometry geom = new Geometry(idStr, sphere);
         
         Player shooter = players.get(owner_id);
-        Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id,owner_id);
+        Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id, owner_id);
 
         Quaternion quat = new Quaternion();
         quat.fromAngleAxis(shooter.getRotation().getZ() * FastMath.PI, Vector3f.UNIT_Z);
@@ -169,6 +169,11 @@ public class ServerMain extends SimpleApplication {
         b.setVelocity(bulletVelocity);
         rootNode.attachChild(geom);
         bullets.put(bullet_id, b);
+    }
+    
+    public void removeBullet(int bullet_id)
+    {
+        bullets.remove(bullet_id).getGeometry().removeFromParent();
     }
     
     @Override
@@ -260,15 +265,18 @@ public class ServerMain extends SimpleApplication {
                 for(Player p : players.values())
                 {
                     CollisionResults results = new CollisionResults();
-                    b.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
+                    if(p.getID() != b.getOwnerID())
+                        b.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
                     
                     if(results.size() > 0)
                     {
                         //collision = true;
+                        b.setAlive(false);
                         //b.setVelocity(new Vector3f(0,0,0));
                     }
                 }
                 
+                // Bullet - World collision
                 for(Spatial spatial : world.getChildren())
                 {
                     CollisionResults results = new CollisionResults();
@@ -278,7 +286,8 @@ public class ServerMain extends SimpleApplication {
                     
                     if(results.size() > 0)
                     {
-                        //collision = true; 
+                        //collision = true;
+                        b.setAlive(false);
                         //b.setVelocity(new Vector3f(0,0,0));
                     }
                 }
