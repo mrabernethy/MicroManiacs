@@ -9,6 +9,7 @@ package mygame;
  * @author Taylor
  */
 public enum ClientCommand {
+    ADD_PLAYER,
     MOVE_UP,
     MOVE_DOWN,
     STOP_MOVE_UP_DOWN,

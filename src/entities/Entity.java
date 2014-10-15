@@ -16,6 +16,9 @@ import com.jme3.scene.Geometry;
 public abstract class Entity {
     
     private Vector3f velocity;
+    private Vector3f acceleration;
+    
+    private float terminalVelocity = 4.0f;
     
     private Geometry geom;
 
@@ -27,6 +30,17 @@ public abstract class Entity {
         this.geom = geom;
         this.geom.setLocalTranslation(position);
         this.velocity = new Vector3f();
+        this.acceleration = new Vector3f();
+    }
+    
+    public void setAcceleration(Vector3f acceleration)
+    {
+        this.acceleration = acceleration;
+    }
+    
+    public Vector3f getAcceleration()
+    {
+        return this.acceleration;
     }
 
     public void setVelocity(Vector3f velocity)
@@ -39,10 +53,19 @@ public abstract class Entity {
         return this.velocity;
     }
     
-    
     public void update(float deltaTime)
     {
+        Vector3f newVel = new Vector3f(getVelocity().x, getVelocity().y, getVelocity().z);
         Vector3f newPos = new Vector3f(getPosition().x, getPosition().y, getPosition().z);
+        
+        newVel.x += deltaTime * acceleration.x;
+        newVel.y += deltaTime * acceleration.y;
+        newVel.z += deltaTime * acceleration.z;
+        
+        if(newVel.length() < terminalVelocity)
+        {
+            setVelocity(newVel);
+        }
         
         newPos.x += deltaTime * velocity.x;
         newPos.y += deltaTime * velocity.y;

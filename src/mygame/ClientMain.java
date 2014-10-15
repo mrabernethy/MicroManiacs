@@ -76,6 +76,10 @@ public class ClientMain extends SimpleApplication {
     @Override
     public void simpleInitApp() 
     { 
+        Serializer.registerClass(ClientMessage.class);
+        Serializer.registerClass(GreetingMessage.class); 
+        Serializer.registerClass(ClientCommandMessage.class); 
+        
         try {
             myClient = Network.connectToServer (Globals.NAME,
                     Globals.VERSION, Globals.DEFAULT_SERVER, 
@@ -84,9 +88,7 @@ public class ClientMain extends SimpleApplication {
         } catch (IOException ex) {}
         
         // Register the message classes
-        Serializer.registerClass(ClientMessage.class);
-        Serializer.registerClass(GreetingMessage.class); 
-        Serializer.registerClass(ClientCommandMessage.class); 
+        
         // Add the message listeners
         myClient.addMessageListener(new ClientListener(this, myClient),
                 GreetingMessage.class);
@@ -127,8 +129,7 @@ public class ClientMain extends SimpleApplication {
         // Add player
         addPlayer(myClient.getId());
         player = (players.get(myClient.getId()));
-        // Send new player info to server
-        myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+        myClient.send(new ClientCommandMessage(ClientCommand.ADD_PLAYER, player.getRotation(), myClient.getId()));
         
         // Stop the camera moving
         this.flyCam.setEnabled(false);

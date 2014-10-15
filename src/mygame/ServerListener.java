@@ -55,36 +55,35 @@ implements MessageListener<HostedConnection>
         {
             final ClientCommandMessage cmdMessage = (ClientCommandMessage) message;
            System.out.println("Server recieved command " + cmdMessage.getCommand().toString() + " from client #" + cmdMessage.getClientID());
-              
-            if(!app.playerExists(cmdMessage.getClientID()))
+            
+            if(cmdMessage.getCommand().equals(ClientCommand.ADD_PLAYER))
             {
-                System.out.println("Doesn't Exist");
                 app.addPlayer(cmdMessage.getClientID());
             }
 
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_UP))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(3);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_DOWN))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(-3);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(-2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_LEFT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(-3);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(-2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_RIGHT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(3);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.STOP_MOVE_LEFT_RIGHT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setX(0);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(0);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.STOP_MOVE_UP_DOWN))
             {
-                app.getPlayer(cmdMessage.getClientID()).getVelocity().setY(0);
+                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(0);
             }
             
             app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
