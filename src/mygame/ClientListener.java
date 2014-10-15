@@ -42,7 +42,7 @@ implements MessageListener<Client>
         {
             final ClientMessage clientMessage = (ClientMessage) message;
             
-            System.out.println("Client recieved position:" + clientMessage.getPos() + " and rotation:" + clientMessage.getQuat() + " for client #" + clientMessage.getClientID());
+            System.out.println("Client recieved position:" + clientMessage.getPosition() + " and rotation:" + clientMessage.getRotation()+ " for client #" + clientMessage.getClientID());
             
             app.enqueue(new Callable() {
                 public Void call()
@@ -52,14 +52,14 @@ implements MessageListener<Client>
                         app.addPlayer(clientMessage.getClientID());
                     }
             
-                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getVelocity(), clientMessage.getRotation());
+                    app.updatePlayer(clientMessage.getClientID(), clientMessage.getPosition(), clientMessage.getRotation());
                     
                     return null;
                 }
             });
            
             // TODO: add debugging toggle
-            System.out.println("Client #" + clientMessage.getClientID() + " sent velocity " + clientMessage.getVelocity().toString());
+            System.out.println("Client #" + clientMessage.getClientID() + " sent position " + clientMessage.getPosition().toString());
         }
     }
 }

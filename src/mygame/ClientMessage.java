@@ -12,7 +12,7 @@ import com.jme3.network.serializing.Serializable;
 @Serializable(id=0)
 public class ClientMessage extends AbstractMessage{
     
-    private Vector3f velocity;
+    private Vector3f pos;
     private Quaternion rotation;
     private int clientID;
     
@@ -20,14 +20,14 @@ public class ClientMessage extends AbstractMessage{
     
     public ClientMessage(Vector3f pos, Quaternion quat, int clientID)
     {
-        this.velocity = pos;
+        this.pos = pos;
         this.rotation = quat;
         this.clientID = clientID;
     }
     
-    public Vector3f getVelocity()
+    public Vector3f getPosition()
     {
-        return this.velocity;
+        return this.pos;
     }
     
     public Quaternion getRotation()

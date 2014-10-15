@@ -188,7 +188,7 @@ public class ClientMain extends SimpleApplication {
         floor_mat.setTexture("ColorMap", tex3);
         
         floor_geo.setMaterial(floor_mat);
-        floor_geo.setLocalTranslation(0, 0, -0.1f);
+        floor_geo.setLocalTranslation(0, 0, 1f);
         this.world.attachChild(floor_geo);
         
         // Add Buildings
