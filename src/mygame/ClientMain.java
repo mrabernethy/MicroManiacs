@@ -44,9 +44,7 @@ public class ClientMain extends SimpleApplication {
     private Node world;
     
     private Client myClient;
-    
-    private Vector3f lastSentPosition;
-      
+ 
     private Vector3f topY;
     private Vector3f bottomY;
     private Vector3f leftX;
@@ -131,7 +129,6 @@ public class ClientMain extends SimpleApplication {
         player = (players.get(myClient.getId()));
         // Send new player info to server
         myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
-        lastSentPosition = new Vector3f(player.getPosition());
         
         // Stop the camera moving
         this.flyCam.setEnabled(false);
@@ -212,7 +209,7 @@ public class ClientMain extends SimpleApplication {
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         geom.setMaterial(mat);
         
-        Player p = new Player(new Vector3f(2,0,0), geom);
+        Player p = new Player(new Vector3f(2,0,0), geom, id);
         rootNode.attachChild(geom);
         players.put(id, p);
         
@@ -260,7 +257,6 @@ public class ClientMain extends SimpleApplication {
     @Override
     public void simpleUpdate(float tpf) {
         //TODO: add update code
-        
         // TODO: update players?
         // Update players
 //        for(Player p : players.values())

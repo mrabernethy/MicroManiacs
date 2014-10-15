@@ -54,12 +54,11 @@ implements MessageListener<HostedConnection>
         if(message instanceof ClientCommandMessage)
         {
             final ClientCommandMessage cmdMessage = (ClientCommandMessage) message;
-           // System.out.println("Server recieved command " + cmdMessage.getCommand().toString() + " from client #" + cmdMessage.getClientID());
-            
-            System.out.println(cmdMessage.getCommand());
+           System.out.println("Server recieved command " + cmdMessage.getCommand().toString() + " from client #" + cmdMessage.getClientID());
               
             if(!app.playerExists(cmdMessage.getClientID()))
             {
+                System.out.println("Doesn't Exist");
                 app.addPlayer(cmdMessage.getClientID());
             }
 
@@ -89,9 +88,6 @@ implements MessageListener<HostedConnection>
             }
             
             app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
-            System.out.println(app.getPlayer(cmdMessage.getClientID()).getPosition().toString());
-            
-            // Check what command was sent
             
         }
     }

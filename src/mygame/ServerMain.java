@@ -1,7 +1,6 @@
 package mygame;
 
 import com.jme3.app.SimpleApplication;
-import com.jme3.material.Material;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.network.Network;
@@ -14,6 +13,8 @@ import com.jme3.system.JmeContext;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 
 /**
@@ -56,8 +57,10 @@ public class ServerMain extends SimpleApplication {
                 ClientMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
                 ClientCommandMessage.class);
-
         
+        Timer updateLoop = new Timer(true);
+        updateLoop.scheduleAtFixedRate(new UpdateTimer(), 0, 50);
+
     }
 
     @Override
@@ -71,11 +74,6 @@ public class ServerMain extends SimpleApplication {
         
         //System.out.println(players.size());
         
-        for(int i = 0; i < players.size(); i++)
-        {
-            ClientMessage message = new ClientMessage(players.get(i).getPosition(), players.get(i).getRotation(), i);
-            myServer.broadcast(message);
-        }
     }
     
     public void removePlayer(int id)
@@ -103,27 +101,23 @@ public class ServerMain extends SimpleApplication {
         //Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         //geom.setMaterial(mat);
         
-        Player p = new Player(new Vector3f(2,0,0), geom);
+        Player p = new Player(new Vector3f(2,0,0), geom, id);
         rootNode.attachChild(geom);
         players.put(id, p);
-        
     }
     
     public void updatePlayer(int id, Vector3f position, Quaternion rotation)
     {
         players.get(id).setPosition(position);
         players.get(id).setRotation(rotation);
+        
     }
     
     @Override
     public void simpleUpdate(float tpf) {
         // TODO: update players?
         // Update players
-        for(Player p : players.values())
-        {
-            System.out.println("Looping");
-            p.update(tpf);
-        }
+        System.out.println(players.size());
         
         // Update Bullets
         
@@ -146,5 +140,21 @@ public class ServerMain extends SimpleApplication {
         super.destroy();
     }
     
-    
+    public class UpdateTimer extends TimerTask
+    {
+
+        @Override
+        public void run() {
+            for(Player p : players.values())
+            {
+               p.update(0.05f);
+               myServer.broadcast(new ClientMessage(p.getPosition(), p.getRotation(), p.getID()));
+            }
+            
+            
+        }
+
+    }
+
 }
+
