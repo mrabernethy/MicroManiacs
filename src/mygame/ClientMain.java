@@ -150,7 +150,7 @@ public class ClientMain extends SimpleApplication {
         this.world = new Node();
         
         // Add base
-        Box floor = new Box(20f, 10f, 0.1f);
+        Box floor = new Box(60f, 30f, 0.1f);
         floor.scaleTextureCoordinates(new Vector2f(1, 1));
         Geometry floor_geo = new Geometry("Floor", floor);
         
