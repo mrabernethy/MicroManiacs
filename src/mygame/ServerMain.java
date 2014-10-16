@@ -162,8 +162,8 @@ public class ServerMain extends SimpleApplication {
         Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id, owner_id);
 
         Quaternion quat = new Quaternion();
-        quat.fromAngleAxis(shooter.getRotation().getZ() * FastMath.PI, Vector3f.UNIT_Z);
-        Vector3f bulletVelocity = new Vector3f(3, 0 , 0);
+        quat.fromAngleAxis(FastMath.acos(shooter.getRotation().getZ() * -1) * 2  , Vector3f.UNIT_Z);
+        Vector3f bulletVelocity = new Vector3f(-3, 0 , 0);
         quat.mult(bulletVelocity, bulletVelocity);
       
         b.setVelocity(bulletVelocity);
@@ -173,7 +173,7 @@ public class ServerMain extends SimpleApplication {
     
     public void removeBullet(int bullet_id)
     {
-        bullets.remove(bullet_id).getGeometry().removeFromParent();
+        bullets.get(bullet_id).getGeometry().removeFromParent();
     }
     
     @Override
@@ -253,7 +253,7 @@ public class ServerMain extends SimpleApplication {
                     p.update(0.03f);
 
                 // Broadcast new player info
-                myServer.broadcast(new UpdateMessage("Player", p.getPosition(), p.getRotation(), p.getID(), p.getID()));
+                myServer.broadcast(new UpdateMessage("Player", p.getPosition(), p.getRotation(), p.getID(), p.getID(), p.getAlive()));
             }
             
             // Bullet collisions/updates
@@ -261,40 +261,44 @@ public class ServerMain extends SimpleApplication {
             {
                 Bullet b = bullets.get(i);
                 
-                // Bullet - Player collision
-                for(Player p : players.values())
+                if(b.getAlive())
                 {
-                    CollisionResults results = new CollisionResults();
-                    if(p.getID() != b.getOwnerID())
-                        b.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
-                    
-                    if(results.size() > 0)
+                    // Bullet - Player collision
+                    for(Player p : players.values())
                     {
-                        //collision = true;
-                        b.setAlive(false);
-                        //b.setVelocity(new Vector3f(0,0,0));
+                        CollisionResults results = new CollisionResults();
+                        if(p.getID() != b.getOwnerID())
+                            b.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
+
+                        if(results.size() > 0)
+                        {
+                            //collision = true;
+                            b.setAlive(false);
+                            //b.setVelocity(new Vector3f(0,0,0));
+                        }
                     }
-                }
-                
-                // Bullet - World collision
-                for(Spatial spatial : world.getChildren())
-                {
-                    CollisionResults results = new CollisionResults();
-                    
-                    if(!spatial.getName().equals("Floor"))
-                        b.getGeometry().collideWith(spatial.getWorldBound(), results);
-                    
-                    if(results.size() > 0)
+
+                    // Bullet - World collision
+                    for(Spatial spatial : world.getChildren())
                     {
-                        //collision = true;
-                        b.setAlive(false);
-                        //b.setVelocity(new Vector3f(0,0,0));
+                        CollisionResults results = new CollisionResults();
+
+                        if(!spatial.getName().equals("Floor"))
+                            b.getGeometry().collideWith(spatial.getWorldBound(), results);
+
+                        if(results.size() > 0)
+                        {
+                            //collision = true;
+                            b.setAlive(false);
+                            removeBullet(b.getID());
+                            System.out.println(b.getGeometry().getName() + " is dead");
+                            //b.setVelocity(new Vector3f(0,0,0));
+                        }
                     }
+
+                    b.update(0.03f);
+                    myServer.broadcast(new UpdateMessage("Bullet", b.getPosition(), b.getRotation(), b.getID(), b.getOwnerID(), b.getAlive()));
                 }
-                
-                b.update(0.03f);
-                
-                myServer.broadcast(new UpdateMessage("Bullet", b.getPosition(), b.getRotation(), b.getID(), b.getOwnerID()));
             }
             
             

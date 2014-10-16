@@ -258,9 +258,14 @@ public class ClientMain extends SimpleApplication {
         return bullets.containsKey(bullet_id);
     }
     
-    public void updateBullet(int bullet_id, Vector3f position)
+    public void updateBullet(int bullet_id, Vector3f position, boolean alive)
     {
         bullets.get(bullet_id).setPosition(position);
+        
+        if(!alive)
+        {
+            rootNode.detachChild(bullets.get(bullet_id).getGeometry());
+        }
     }
     
     public void collisionWithWall()

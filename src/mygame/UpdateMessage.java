@@ -21,16 +21,18 @@ public class UpdateMessage extends AbstractMessage{
     private Quaternion quat;
     private int updateID;
     private int clientID;
+    private boolean alive;
     
     public UpdateMessage(){}
     
-    public UpdateMessage(String toUpdate, Vector3f pos, Quaternion quat, int updateID, int clientID)
+    public UpdateMessage(String toUpdate, Vector3f pos, Quaternion quat, int updateID, int clientID, boolean alive)
     {
         this.toUpdate = toUpdate;
         this.pos = pos;
         this.quat = quat;
         this.updateID = updateID;
         this.clientID = clientID;
+        this.alive = alive;
     }
     
     public String getToUpdate()
@@ -56,6 +58,11 @@ public class UpdateMessage extends AbstractMessage{
     public int getClientID()
     {
         return this.clientID;
+    }
+    
+    public boolean getAlive()
+    {
+        return this.alive;
     }
     
 }

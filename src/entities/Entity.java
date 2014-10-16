@@ -131,4 +131,14 @@ public abstract class Entity {
     {
         return this.alive;
     }
+    
+    public void setTerminalVelocity(float terminalVelocity)
+    {
+        this.terminalVelocity = terminalVelocity;
+    }
+    
+    public float getTerminalVelocity()
+    {
+        return this.terminalVelocity;
+    }
 }

@@ -92,8 +92,6 @@ implements MessageListener<HostedConnection>
             {
                 app.addBullet(cmdMessage.getClientID());
             }
-            
-                    System.out.println(app.getPlayer(cmdMessage.getClientID()).getRotation().getW());
         }
     }
     

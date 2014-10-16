@@ -65,7 +65,7 @@ implements MessageListener<Client>
                             app.addBullet(updateMessage.getClientID(), updateMessage.getUpdateID());
                         }
                         
-                        app.updateBullet(updateMessage.getUpdateID(), updateMessage.getPos());
+                        app.updateBullet(updateMessage.getUpdateID(), updateMessage.getPos(), updateMessage.getAlive());
                     }
                     return null;
                 }
