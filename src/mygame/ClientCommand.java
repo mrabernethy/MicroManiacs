@@ -16,5 +16,7 @@ public enum ClientCommand {
     MOVE_LEFT,
     MOVE_RIGHT,
     STOP_MOVE_LEFT_RIGHT,
-    SHOOT;
+    SHOOT,
+    INTERACT,
+    ROTATE;
 }

@@ -26,6 +26,7 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
 import entities.Bullet;
+import entities.Car;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ public class ClientMain extends SimpleApplication {
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
     private HashMap<Integer, Bullet> bullets = new HashMap();
+    private HashMap<Integer, Car> cars = new HashMap();
     
     private final static Trigger TRIGGER_W = new KeyTrigger(KeyInput.KEY_W);
     private final static Trigger TRIGGER_S = new KeyTrigger(KeyInput.KEY_S);
@@ -73,12 +75,14 @@ public class ClientMain extends SimpleApplication {
     private final static Trigger TRIGGER_RIGHT = new KeyTrigger(KeyInput.KEY_RIGHT);
     // TODO: add shoot -- on click or space?
     private final static Trigger TRIGGER_SPACE = new KeyTrigger(KeyInput.KEY_SPACE);
+    private final static Trigger TRIGGER_E = new KeyTrigger(KeyInput.KEY_E);
     
     private final static String  MAPPING_UP = "Up";
     private final static String  MAPPING_DOWN = "Down";
     private final static String  MAPPING_LEFT = "Left";
     private final static String  MAPPING_RIGHT = "Right";
     private final static String  MAPPING_SHOOT = "Shoot";
+    private final static String  MAPPING_INTERACT = "Interact";
     
     @Override
     public void simpleInitApp() 
@@ -112,11 +116,12 @@ public class ClientMain extends SimpleApplication {
         inputManager.addMapping(MAPPING_RIGHT, TRIGGER_D, TRIGGER_RIGHT);
         // TODO: add mapping for mouse buttons
         inputManager.addMapping(MAPPING_SHOOT, TRIGGER_SPACE);
+        inputManager.addMapping(MAPPING_INTERACT, TRIGGER_E);
         
         // TODO: add space mapping to listener
         // Listener for click events ie. shoot bullet
         inputManager.addListener(actionListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
-            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_SHOOT});
+            MAPPING_LEFT, MAPPING_RIGHT, MAPPING_SHOOT, MAPPING_INTERACT});
         // Listener for push events ie. move up
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
@@ -239,7 +244,7 @@ public class ClientMain extends SimpleApplication {
         return players.containsKey(id);
     }
     
-    public void updatePlayer(int id, Vector3f position, Quaternion rotation, boolean alive, int life)
+    public void updatePlayer(int id, Vector3f position, Quaternion rotation, boolean alive, int life, int currentVehicleID)
     {
         Player player = players.get(id);
         
@@ -247,6 +252,7 @@ public class ClientMain extends SimpleApplication {
         player.setRotation(rotation);
         player.setAlive(alive);
         player.setLife(life);
+        player.setCurrentVehicleID(currentVehicleID);
         
     }
     
@@ -272,6 +278,25 @@ public class ClientMain extends SimpleApplication {
         bullets.put(bullet_id, b);
     }
     
+    public void addCar(int id, Vector3f position)
+    {
+        String idStr = "Car " + id;
+        
+        Box b = new Box(0.8f, 0.5f, 0.1f);
+        Geometry geom = new Geometry(idStr, b);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        geom.setMaterial(mat);
+        
+        Car c = new Car(position, geom, id);
+        rootNode.attachChild(geom);
+        cars.put(id, c);
+    }
+    
+    public boolean carExists(int id)
+    {
+        return cars.containsKey(id);
+    }
+    
     public boolean bulletExists(int bullet_id)
     {
         return bullets.containsKey(bullet_id);
@@ -285,6 +310,16 @@ public class ClientMain extends SimpleApplication {
         {
             rootNode.detachChild(bullets.get(bullet_id).getGeometry());
         }
+    }
+    
+    public void updateCar(int id, Vector3f position, Quaternion rotation, int riderID, boolean alive)
+    {
+        Car c = cars.get(id);
+        
+        c.setPosition(position);
+        c.setRotation(rotation);
+        c.setRiderID(riderID);
+        c.setAlive(alive);
     }
     
     public void updateEntity(String updateMessage)
@@ -305,13 +340,14 @@ public class ClientMain extends SimpleApplication {
                                                     Float.parseFloat(rotSplit[3].trim()));
             boolean alive = Boolean.parseBoolean(split[4]);
             int life = Integer.parseInt(split[5]);
+            int currentVehicleID = Integer.parseInt(split[6]);
             
             if(!playerExists(id))
             {
                 addPlayer(id);
             }
             
-            updatePlayer(id, position, rotation, alive, life);
+            updatePlayer(id, position, rotation, alive, life, currentVehicleID);
         }
         else if(split[0].equals("Bullet"))
         {
@@ -329,6 +365,28 @@ public class ClientMain extends SimpleApplication {
             }
             
             updateBullet(id, position, alive);
+        }
+        else if(split[0].equals("Car"))
+        {
+            int id = Integer.parseInt(split[1]);
+            int riderID = Integer.parseInt(split[2]);
+            String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
+            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                Float.parseFloat(posSplit[1].trim()),
+                                                Float.parseFloat(posSplit[2].trim()));
+            String[] rotSplit = split[4].replace("(", "").replace(")", "").split(",");
+            Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
+                                                    Float.parseFloat(rotSplit[1].trim()),
+                                                    Float.parseFloat(rotSplit[2].trim()),
+                                                    Float.parseFloat(rotSplit[3].trim()));
+            boolean alive = Boolean.parseBoolean(split[5]);
+            
+            if(!carExists(id))
+            {
+                addCar(id, position);
+            }
+            
+            updateCar(id, position, rotation, riderID, alive);
         }
     }
     
@@ -359,11 +417,7 @@ public class ClientMain extends SimpleApplication {
         //TODO: add update code
         // TODO: update players?
         // Update players
-//        for(Player p : players.values())
-//        {
-//            p.update(tpf);
-//        }
-        
+        //myClient.send(new ClientCommandMessage(ClientCommand.ROTATE,player.getRotation(), myClient.getId()));
         // Update HUD
         lifeText.setText("Life: " + player.getLife());
         
@@ -454,6 +508,10 @@ public class ClientMain extends SimpleApplication {
                 if(name.equals(MAPPING_SHOOT) && keyPressed)
                 {
                     myClient.send(new ClientCommandMessage(ClientCommand.SHOOT, player.getRotation(), myClient.getId()));
+                }
+                if(name.equals(MAPPING_INTERACT) && keyPressed)
+                {
+                    myClient.send(new ClientCommandMessage(ClientCommand.INTERACT, player.getRotation(), myClient.getId()));
                 }
             }
         }

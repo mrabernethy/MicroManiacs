@@ -20,7 +20,7 @@ public class UpdateMessage extends AbstractMessage{
     
     public UpdateMessage(){}
     
-    public UpdateMessage(String updateMessageString, int clientID)
+    public UpdateMessage(String updateMessageString)
     {
         this.updateMessageString = updateMessageString;
     }

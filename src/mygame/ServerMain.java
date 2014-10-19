@@ -18,6 +18,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.JmeContext;
 import entities.Bullet;
+import entities.Car;
 import entities.Player;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,9 +44,11 @@ public class ServerMain extends SimpleApplication {
     private HashMap<Integer, Player> players = new HashMap();
     private HashMap<Integer, Bullet> bullets = new HashMap();
     private int bulletIDCounter = 0;
+    private HashMap<Integer, Car> cars = new HashMap();
     
     private Node world;
-    private ArrayList<Vector3f> possibleSpawns = new ArrayList();
+    private ArrayList<Vector3f> possiblePlayerSpawns = new ArrayList();
+    private ArrayList<Vector3f> possibleCarSpawns = new ArrayList();
     
     private Server myServer;
     int connections = 0;
@@ -54,7 +57,8 @@ public class ServerMain extends SimpleApplication {
     @Override
     public void simpleInitApp() 
     {
-        initPossibleSpawns();
+        initPossiblePlayerSpawns();
+        initPossibleCarSpawns();
         
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
@@ -77,28 +81,49 @@ public class ServerMain extends SimpleApplication {
                 ClientCommandMessage.class);
         
         initWorld();
+        initCars();
         
         Timer updateLoop = new Timer(true);
         updateLoop.scheduleAtFixedRate(new UpdateTimer(), 0, 30);
     }
     
-    public void initPossibleSpawns()
+    public void initPossiblePlayerSpawns()
     {
-        possibleSpawns.add(new Vector3f(2, 0, 0));
-        possibleSpawns.add(new Vector3f(10, 24, 0));
-        possibleSpawns.add(new Vector3f(32, 18, 0));
-        possibleSpawns.add(new Vector3f(45, -8, 0));
-        possibleSpawns.add(new Vector3f(16,-16, 0));
-        possibleSpawns.add(new Vector3f(-25, -8, 0));
-        possibleSpawns.add(new Vector3f(-56, -7, 0));
-        possibleSpawns.add(new Vector3f(-42, 24, 0));
+        possiblePlayerSpawns.add(new Vector3f(2, 0, 0));
+        possiblePlayerSpawns.add(new Vector3f(10, 24, 0));
+        possiblePlayerSpawns.add(new Vector3f(32, 18, 0));
+        possiblePlayerSpawns.add(new Vector3f(45, -8, 0));
+        possiblePlayerSpawns.add(new Vector3f(16,-16, 0));
+        possiblePlayerSpawns.add(new Vector3f(-25, -8, 0));
+        possiblePlayerSpawns.add(new Vector3f(-56, -7, 0));
+        possiblePlayerSpawns.add(new Vector3f(-42, 24, 0));
     }
     
-    public Vector3f getRandomSpawn()
+    public void initPossibleCarSpawns()
+    {
+        possibleCarSpawns.add(new Vector3f(3.5f, 0, 0));
+//        possibleCarSpawns.add(new Vector3f(10, 24, 0));
+//        possibleCarSpawns.add(new Vector3f(32, 18, 0));
+//        possibleCarSpawns.add(new Vector3f(45, -8, 0));
+//        possibleCarSpawns.add(new Vector3f(16,-16, 0));
+//        possibleCarSpawns.add(new Vector3f(-25, -8, 0));
+//        possibleCarSpawns.add(new Vector3f(-56, -7, 0));
+//        possibleCarSpawns.add(new Vector3f(-42, 24, 0));
+    }
+    
+    public Vector3f getRandomPlayerSpawn()
     {
         Random rnd = new Random();
         
-        return possibleSpawns.get(rnd.nextInt(possibleSpawns.size()));
+        return possiblePlayerSpawns.get(rnd.nextInt(possiblePlayerSpawns.size()));
+    }
+    
+    public void initCars()
+    {
+        for(int i = 0; i < possibleCarSpawns.size(); i++)
+        {
+            addCar(i, possibleCarSpawns.get(i));
+        }
     }
     
     public void initWorld()
@@ -154,9 +179,28 @@ public class ServerMain extends SimpleApplication {
         return players.get(id);
     }
     
+    public Car getCar(int id)
+    {
+        return cars.get(id);
+    }
+    
     public boolean playerExists(int id)
     {
         return players.containsKey(id);
+    }
+    
+    public void addCar(int id, Vector3f position)
+    {
+        String idStr = "Car " + id;
+        
+        Box b = new Box(0.8f, 0.5f, 0.1f);
+        Geometry geom = new Geometry(idStr, b);
+        //Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
+        //geom.setMaterial(mat);
+        
+        Car c = new Car(position, geom, id);
+        rootNode.attachChild(geom);
+        cars.put(id, c);
     }
     
     public void addPlayer(int id)
@@ -168,7 +212,7 @@ public class ServerMain extends SimpleApplication {
         //Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         //geom.setMaterial(mat);
         
-        Player p = new Player(getRandomSpawn(), geom, id);
+        Player p = new Player(getRandomPlayerSpawn(), geom, id);
         rootNode.attachChild(geom);
         players.put(id, p);
     }
@@ -179,7 +223,7 @@ public class ServerMain extends SimpleApplication {
         
         String idStr = "Bullet " + bullet_id + " of player " + owner_id;
         
-        Sphere sphere = new Sphere(36, 36, 0.3f);
+        Sphere sphere = new Sphere(32, 32, 0.2f);
         Geometry geom = new Geometry(idStr, sphere);
         
         Player shooter = players.get(owner_id);
@@ -238,7 +282,8 @@ public class ServerMain extends SimpleApplication {
             {
                 Player p = players.get(i);
                 
-                boolean collision = false;
+                if(p.getCurrentVehicleID() >= 0)
+                    break;
                 
                 // Player - Player Collisions
                 for(Player p2 : players.values())
@@ -278,7 +323,7 @@ public class ServerMain extends SimpleApplication {
                 
                 
                 // Broadcast new player info
-                myServer.broadcast(new UpdateMessage(p.toString(), p.getID()));
+                myServer.broadcast(new UpdateMessage(p.toString()));
             }
             
             // Bullet collisions/updates
@@ -297,15 +342,34 @@ public class ServerMain extends SimpleApplication {
 
                         if(results.size() > 0)
                         {
-                            //collision = true;
                             b.setAlive(false);
                             p.removeLife(1);
                             if(!p.getAlive())
                             {
                                 p.setLife(5);
-                                p.setPosition(getRandomSpawn());
+                                p.setPosition(getRandomPlayerSpawn());
                             }
-                            //b.setVelocity(new Vector3f(0,0,0));
+                        }
+                    }
+                    
+                    // Bullet - Car collision
+                    for(Car c : cars.values())
+                    {
+                        CollisionResults results = new CollisionResults();
+                        
+                        b.getGeometry().collideWith(c.getGeometry().getWorldBound(), results);
+
+                        if(results.size() > 0)
+                        {
+                            //collision = true;
+                            b.setAlive(false);
+                            removeBullet(b.getID());
+                            if(!c.hasRider() && players.get(b.getOwnerID()).getPosition().distance(c.getPosition()) < 3)
+                            {
+                                c.setRiderID(b.getOwnerID());
+                                players.get(b.getOwnerID()).setCurrentVehicleID(c.getID());
+                                players.get(b.getOwnerID()).setPosition(c.getPosition());
+                            }
                         }
                     }
 
@@ -322,20 +386,62 @@ public class ServerMain extends SimpleApplication {
                             //collision = true;
                             b.setAlive(false);
                             removeBullet(b.getID());
-                            System.out.println(b.getGeometry().getName() + " is destroyed");
                             //b.setVelocity(new Vector3f(0,0,0));
                         }
                     }
 
                     b.update(0.03f);
-                    myServer.broadcast(new UpdateMessage(b.toString(), b.getOwnerID()));
+                    myServer.broadcast(new UpdateMessage(b.toString()));
                 }
             }
             
-            
+            for(int i = 0; i < cars.size(); i++)
+            {
+                Car c = cars.get(i);
+                
+                if(c.getAlive())
+                {
+                    // Car - Player collisions
+                    for(Player p : players.values())
+                    {
+                        CollisionResults results = new CollisionResults();
+
+                        if(p.getID() != c.getRiderID())
+                        {
+                            c.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
+                        }
+
+                        if(results.size() > 0)
+                        {
+                            p.setVelocity(c.getVelocity());
+                        }
+                    }
+                    
+                    // Car - Building collisions
+                    for(Spatial spatial : world.getChildren())
+                    {
+                        CollisionResults results = new CollisionResults();
+
+                        if(!spatial.getName().equals("Floor"))
+                            c.getGeometry().collideWith(spatial.getWorldBound(), results);
+
+                        if(results.size() > 0)
+                        {
+                           c.setVelocity(c.getVelocity().negate().divide(1.5f));
+                        }
+                    }
+                }
+                
+                c.update(0.03f);
+                if(c.hasRider())
+                {
+                    players.get(c.getRiderID()).setPosition(c.getPosition());
+                    c.setRotation(players.get(c.getRiderID()).getRotation());
+                    myServer.broadcast(new UpdateMessage(players.get(c.getRiderID()).toString()));
+                }
+                myServer.broadcast(new UpdateMessage(c.toString()));
+            }
         }
-
     }
-
 }
 

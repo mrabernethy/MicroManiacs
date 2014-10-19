@@ -4,6 +4,7 @@ import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import com.jme3.network.Server;
+import entities.Player;
 
 /**
  *
@@ -62,35 +63,67 @@ implements MessageListener<HostedConnection>
                 app.addPlayer(cmdMessage.getClientID());
             }
             
-            app.getPlayer(cmdMessage.getClientID()).setRotation(cmdMessage.getRotation());
+            Player p = app.getPlayer(cmdMessage.getClientID());
+            
+            
+            p.setRotation(cmdMessage.getRotation());
             
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_UP))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(2);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setY(3);
+                else
+                    p.getAcceleration().setY(2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_DOWN))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(-2);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setY(-3);
+                else
+                    p.getAcceleration().setY(-2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_LEFT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(-2);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setX(-3);
+                else
+                    p.getAcceleration().setX(-2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.MOVE_RIGHT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(2);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setX(3);
+                else
+                    p.getAcceleration().setX(2);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.STOP_MOVE_LEFT_RIGHT))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setX(0);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setX(0);
+                else
+                    p.getAcceleration().setX(0);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.STOP_MOVE_UP_DOWN))
             {
-                app.getPlayer(cmdMessage.getClientID()).getAcceleration().setY(0);
+                if(p.getCurrentVehicleID() >= 0)
+                    app.getCar(p.getCurrentVehicleID()).getAcceleration().setY(0);
+                else
+                    p.getAcceleration().setY(0);
             }
             if(cmdMessage.getCommand().equals(ClientCommand.SHOOT))
             {
-                app.addBullet(cmdMessage.getClientID());
+                app.addBullet(p.getID());
+            }
+            if(cmdMessage.getCommand().equals(ClientCommand.INTERACT))
+            {
+                if(p.getCurrentVehicleID() >= 0)
+                {
+                    int current = p.getCurrentVehicleID();
+                    p.setCurrentVehicleID(-1);
+                    app.getCar(current).setRiderID(-1);
+                    p.getAcceleration().setY(0);
+                    p.getAcceleration().setX(0);
+                }
             }
         }
     }
