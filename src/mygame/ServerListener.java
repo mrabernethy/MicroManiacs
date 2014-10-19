@@ -4,6 +4,7 @@ import com.jme3.network.HostedConnection;
 import com.jme3.network.Message;
 import com.jme3.network.MessageListener;
 import com.jme3.network.Server;
+import entities.Car;
 import entities.Player;
 
 /**
@@ -119,10 +120,16 @@ implements MessageListener<HostedConnection>
                 if(p.getCurrentVehicleID() >= 0)
                 {
                     int current = p.getCurrentVehicleID();
+                    Car c = app.getCar(current);
                     p.setCurrentVehicleID(-1);
-                    app.getCar(current).setRiderID(-1);
+                    c.setRiderID(-1);
+                    c.getAcceleration().setY(0);
+                    c.getAcceleration().setX(0);
+                    c.getVelocity().setY(0);
+                    c.getVelocity().setX(0);
                     p.getAcceleration().setY(0);
                     p.getAcceleration().setX(0);
+                    
                 }
             }
         }

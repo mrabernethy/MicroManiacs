@@ -357,7 +357,8 @@ public class ServerMain extends SimpleApplication {
                     {
                         CollisionResults results = new CollisionResults();
                         
-                        b.getGeometry().collideWith(c.getGeometry().getWorldBound(), results);
+                        if(!c.hasRider())
+                            b.getGeometry().collideWith(c.getGeometry().getWorldBound(), results);
 
                         if(results.size() > 0)
                         {
@@ -406,7 +407,7 @@ public class ServerMain extends SimpleApplication {
                     {
                         CollisionResults results = new CollisionResults();
 
-                        if(p.getID() != c.getRiderID())
+                        if(p.getID() != c.getRiderID() && c.hasRider())
                         {
                             c.getGeometry().collideWith(p.getGeometry().getWorldBound(), results);
                         }
