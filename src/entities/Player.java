@@ -13,9 +13,50 @@ import com.jme3.scene.Geometry;
  */
 public class Player extends Entity{
 
-    public Player(Vector3f position, Geometry geom, int id)                            //, SpriteImage spriteImage)
+    private int life;
+    
+    public Player(Vector3f position, Geometry geom, int id)                            
     {
-        super(position, geom, id);                                          //, spriteImage);
+        super(position, geom, id);
+        
+        this.life = 5;
     }
-
+    
+    public void checkAlive()
+    {
+        this.setAlive(this.life > 0);
+    }
+    
+    public void removeLife(int lifeToRemove)
+    {
+        this.life -= lifeToRemove;
+        
+        checkAlive();
+    }
+    
+    public void setLife(int life)
+    {
+        this.life = life;
+        
+        checkAlive();
+    }
+    
+    public int getLife()
+    {
+        return this.life;
+    }
+    
+    
+    
+    @Override
+    public String toString()
+    {
+        return  "Player&" + 
+                getID() + "&" +
+                getPosition().toString() + "&" + 
+                getRotation().toString() + "&" +
+                getAlive() + "&" +
+                getLife();
+    }
+    
 }

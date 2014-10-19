@@ -2,7 +2,7 @@ package mygame;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.TextureKey;
-import com.jme3.bullet.BulletAppState;
+import com.jme3.font.BitmapText;
 import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -55,6 +55,9 @@ public class ClientMain extends SimpleApplication {
        
     // Chase camera
     private ChaseCamera chaseCamera;
+    
+    // HUD elements
+    BitmapText lifeText;
     
     private Player player;
     private HashMap<Integer, Player> players = new HashMap();
@@ -145,8 +148,19 @@ public class ClientMain extends SimpleApplication {
         player.getGeometry().addControl(chaseCamera);
         
         /** Initialize the scene*/
+        initHUD();
         initWorld();
 //        initCrossHairs();
+    }
+    
+    public void initHUD()
+    {
+        lifeText = new BitmapText(guiFont, false);
+        lifeText.setSize(guiFont.getCharSet().getRenderedSize());
+        lifeText.setColor(ColorRGBA.Red);
+        lifeText.setLocalTranslation(0,470,0);
+        lifeText.setText("Life:");
+        guiNode.attachChild(lifeText);
     }
     
     public void initWorld()
@@ -225,10 +239,15 @@ public class ClientMain extends SimpleApplication {
         return players.containsKey(id);
     }
     
-    public void updatePlayer(int id, Vector3f position, Quaternion rotation)
+    public void updatePlayer(int id, Vector3f position, Quaternion rotation, boolean alive, int life)
     {
-        players.get(id).setPosition(position);
-        players.get(id).setRotation(rotation);
+        Player player = players.get(id);
+        
+        player.setPosition(position);
+        player.setRotation(rotation);
+        player.setAlive(alive);
+        player.setLife(life);
+        
     }
     
     // TODO: update function
@@ -268,6 +287,51 @@ public class ClientMain extends SimpleApplication {
         }
     }
     
+    public void updateEntity(String updateMessage)
+    {
+        String[] split = updateMessage.split("&");
+        
+        if(split[0].equals("Player"))
+        {
+            int id = Integer.parseInt(split[1]);
+            String[] posSplit = split[2].replace("(", "").replace(")", "").split(",");
+            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                Float.parseFloat(posSplit[1].trim()),
+                                                Float.parseFloat(posSplit[2].trim()));
+            String[] rotSplit = split[3].replace("(", "").replace(")", "").split(",");
+            Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
+                                                    Float.parseFloat(rotSplit[1].trim()),
+                                                    Float.parseFloat(rotSplit[2].trim()),
+                                                    Float.parseFloat(rotSplit[3].trim()));
+            boolean alive = Boolean.parseBoolean(split[4]);
+            int life = Integer.parseInt(split[5]);
+            
+            if(!playerExists(id))
+            {
+                addPlayer(id);
+            }
+            
+            updatePlayer(id, position, rotation, alive, life);
+        }
+        else if(split[0].equals("Bullet"))
+        {
+            int id = Integer.parseInt(split[1]);
+            int ownerID = Integer.parseInt(split[2]);
+            String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
+            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                Float.parseFloat(posSplit[1].trim()),
+                                                Float.parseFloat(posSplit[2].trim()));
+            boolean alive = Boolean.parseBoolean(split[4]);
+            
+            if(!bulletExists(id))
+            {
+                addBullet(ownerID, id);
+            }
+            
+            updateBullet(id, position, alive);
+        }
+    }
+    
     public void collisionWithWall()
     {
         topY = new Vector3f(player.getPosition());
@@ -300,7 +364,9 @@ public class ClientMain extends SimpleApplication {
 //            p.update(tpf);
 //        }
         
-        // Update camera
+        // Update HUD
+        lifeText.setText("Life: " + player.getLife());
+        
         
         // Rotate box to look at mouse cursor
         Vector2f mousePos = inputManager.getCursorPosition();
@@ -332,6 +398,8 @@ public class ClientMain extends SimpleApplication {
     {
         try {
             myClient.close();
+            
+            System.out.println("Client Closed");
         } catch (Exception ex) {}
         super.destroy();
     }

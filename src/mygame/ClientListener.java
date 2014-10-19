@@ -45,28 +45,8 @@ implements MessageListener<Client>
             app.enqueue(new Callable() {
                 public Void call()
                 {
-                    if(updateMessage.getToUpdate().equals("Player"))
-                    {
-                        System.out.println("Client recieved position:" + updateMessage.getPos() + " and rotation:" + updateMessage.getQuat() + " for player #" + updateMessage.getUpdateID());
-                        
-                        if(!app.playerExists(updateMessage.getUpdateID()))
-                        {
-                            app.addPlayer(updateMessage.getUpdateID());
-                        }
-
-                        app.updatePlayer(updateMessage.getUpdateID(), updateMessage.getPos(), updateMessage.getQuat());
-                    }
-                    if(updateMessage.getToUpdate().equals("Bullet"))
-                    {
-                        System.out.println("Client recieved position:" + updateMessage.getPos() + " for bullet #" + updateMessage.getUpdateID());
-                        
-                        if(!app.bulletExists(updateMessage.getUpdateID()))
-                        {
-                            app.addBullet(updateMessage.getClientID(), updateMessage.getUpdateID());
-                        }
-                        
-                        app.updateBullet(updateMessage.getUpdateID(), updateMessage.getPos(), updateMessage.getAlive());
-                    }
+                    app.updateEntity(updateMessage.getUpdateMessageString());
+                    
                     return null;
                 }
             });

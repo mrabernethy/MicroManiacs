@@ -20,7 +20,9 @@ import com.jme3.system.JmeContext;
 import entities.Bullet;
 import entities.Player;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -43,6 +45,7 @@ public class ServerMain extends SimpleApplication {
     private int bulletIDCounter = 0;
     
     private Node world;
+    private ArrayList<Vector3f> possibleSpawns = new ArrayList();
     
     private Server myServer;
     int connections = 0;
@@ -51,6 +54,8 @@ public class ServerMain extends SimpleApplication {
     @Override
     public void simpleInitApp() 
     {
+        initPossibleSpawns();
+        
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
         Serializer.registerClass(ClientCommandMessage.class); 
@@ -77,7 +82,26 @@ public class ServerMain extends SimpleApplication {
         updateLoop.scheduleAtFixedRate(new UpdateTimer(), 0, 30);
     }
     
-        public void initWorld()
+    public void initPossibleSpawns()
+    {
+        possibleSpawns.add(new Vector3f(2, 0, 0));
+        possibleSpawns.add(new Vector3f(10, 24, 0));
+        possibleSpawns.add(new Vector3f(32, 18, 0));
+        possibleSpawns.add(new Vector3f(45, -8, 0));
+        possibleSpawns.add(new Vector3f(16,-16, 0));
+        possibleSpawns.add(new Vector3f(-25, -8, 0));
+        possibleSpawns.add(new Vector3f(-56, -7, 0));
+        possibleSpawns.add(new Vector3f(-42, 24, 0));
+    }
+    
+    public Vector3f getRandomSpawn()
+    {
+        Random rnd = new Random();
+        
+        return possibleSpawns.get(rnd.nextInt(possibleSpawns.size()));
+    }
+    
+    public void initWorld()
     {
         this.world = new Node();
         
@@ -144,7 +168,7 @@ public class ServerMain extends SimpleApplication {
         //Material mat = new Material(assetManager, "Common/MatDefs/Misc/ShowNormals.j3md");
         //geom.setMaterial(mat);
         
-        Player p = new Player(new Vector3f(2,0,0), geom, id);
+        Player p = new Player(getRandomSpawn(), geom, id);
         rootNode.attachChild(geom);
         players.put(id, p);
     }
@@ -163,7 +187,7 @@ public class ServerMain extends SimpleApplication {
 
         Quaternion quat = new Quaternion();
         quat.fromAngleAxis(FastMath.acos(shooter.getRotation().getZ() * -1) * 2  , Vector3f.UNIT_Z);
-        Vector3f bulletVelocity = new Vector3f(-3, 0 , 0);
+        Vector3f bulletVelocity = new Vector3f(-7, 0 , 0);
         quat.mult(bulletVelocity, bulletVelocity);
       
         b.setVelocity(bulletVelocity);
@@ -250,10 +274,11 @@ public class ServerMain extends SimpleApplication {
 
                 // Update player
                 //if(!collision)
-                    p.update(0.03f);
-
+                p.update(0.03f);
+                
+                
                 // Broadcast new player info
-                myServer.broadcast(new UpdateMessage("Player", p.getPosition(), p.getRotation(), p.getID(), p.getID(), p.getAlive()));
+                myServer.broadcast(new UpdateMessage(p.toString(), p.getID()));
             }
             
             // Bullet collisions/updates
@@ -274,6 +299,12 @@ public class ServerMain extends SimpleApplication {
                         {
                             //collision = true;
                             b.setAlive(false);
+                            p.removeLife(1);
+                            if(!p.getAlive())
+                            {
+                                p.setLife(5);
+                                p.setPosition(getRandomSpawn());
+                            }
                             //b.setVelocity(new Vector3f(0,0,0));
                         }
                     }
@@ -291,13 +322,13 @@ public class ServerMain extends SimpleApplication {
                             //collision = true;
                             b.setAlive(false);
                             removeBullet(b.getID());
-                            System.out.println(b.getGeometry().getName() + " is dead");
+                            System.out.println(b.getGeometry().getName() + " is destroyed");
                             //b.setVelocity(new Vector3f(0,0,0));
                         }
                     }
 
                     b.update(0.03f);
-                    myServer.broadcast(new UpdateMessage("Bullet", b.getPosition(), b.getRotation(), b.getID(), b.getOwnerID(), b.getAlive()));
+                    myServer.broadcast(new UpdateMessage(b.toString(), b.getOwnerID()));
                 }
             }
             

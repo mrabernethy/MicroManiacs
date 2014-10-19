@@ -19,11 +19,21 @@ public class Bullet extends Entity{
     {
         super(position, geom, bullet_id);                                          //, spriteImage);
         this.owner_id = owner_id;
-        this.setTerminalVelocity(6.0f);
+        this.setTerminalVelocity(7.0f);
     }
     
     public int getOwnerID()
     {
         return owner_id;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return  "Bullet&" + 
+                getID() + "&" +
+                getOwnerID() + "&" +
+                getPosition().toString() + "&" + 
+                getAlive();
     }
 }
