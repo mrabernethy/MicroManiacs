@@ -6,6 +6,7 @@ package entities;
 
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
+import mygame.Weapon;
 
 /**
  *
@@ -15,6 +16,8 @@ public class Player extends Entity{
 
     private int life;
     private int currentVehicleID;
+    private long lastAttackTime;
+    private Weapon weapon;
     
     public Player(Vector3f position, Geometry geom, int id)                            
     {
@@ -22,6 +25,27 @@ public class Player extends Entity{
         
         this.currentVehicleID = -1;
         this.life = 5;
+        this.weapon = Weapon.SHOTGUN;
+    }
+    
+    public void setLastAttackTime(long lastAttackTime)
+    {
+        this.lastAttackTime = lastAttackTime;
+    }
+    
+    public long getLastAttackTime()
+    {
+        return this.lastAttackTime;
+    }
+    
+    public void setWeapon(Weapon weapon)
+    {
+        this.weapon = weapon;
+    }
+    
+    public Weapon getWeapon()
+    {
+        return this.weapon;
     }
     
     public void checkAlive()
@@ -72,7 +96,9 @@ public class Player extends Entity{
                 getRotation().toString() + "&" +
                 getAlive() + "&" +
                 getLife() + "&" +
-                getCurrentVehicleID();
+                getCurrentVehicleID() + "&" +
+                getLastAttackTime() + "&" +
+                getWeapon().name();
     }
     
 }

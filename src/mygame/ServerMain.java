@@ -217,26 +217,35 @@ public class ServerMain extends SimpleApplication {
         players.put(id, p);
     }
     
-    public void addBullet(int owner_id)
+    public void shoot(int shooterID)
     {
-        int bullet_id = bulletIDCounter++;
+        Player shooter = players.get(shooterID);
         
-        String idStr = "Bullet " + bullet_id + " of player " + owner_id;
-        
-        Sphere sphere = new Sphere(32, 32, 0.2f);
-        Geometry geom = new Geometry(idStr, sphere);
-        
-        Player shooter = players.get(owner_id);
-        Bullet b = new Bullet(shooter.getPosition(), geom, bullet_id, owner_id);
+        if(shooter.getLastAttackTime() + shooter.getWeapon().getShotCooldown() < System.currentTimeMillis())
+        {
+            shooter.setLastAttackTime(System.currentTimeMillis());
+            
+            for(int i = 0; i < shooter.getWeapon().getBulletSpread(); i++)
+            {
+                int bulletID = bulletIDCounter++;
 
-        Quaternion quat = new Quaternion();
-        quat.fromAngleAxis(FastMath.acos(shooter.getRotation().getZ() * -1) * 2  , Vector3f.UNIT_Z);
-        Vector3f bulletVelocity = new Vector3f(-7, 0 , 0);
-        quat.mult(bulletVelocity, bulletVelocity);
-      
-        b.setVelocity(bulletVelocity);
-        rootNode.attachChild(geom);
-        bullets.put(bullet_id, b);
+                String idStr = "Bullet " + bulletID + " of player " + shooterID;
+
+                Sphere sphere = new Sphere(32, 32, 0.2f);
+                Geometry geom = new Geometry(idStr, sphere);
+
+                Bullet b = new Bullet(shooter.getPosition(), geom, bulletID, shooterID);
+
+                Quaternion quat = new Quaternion();
+                quat.fromAngleAxis(FastMath.acos(shooter.getRotation().getZ() * -1) * 2 + 0.2f*i - 0.1f*(shooter.getWeapon().getBulletSpread()-1) , Vector3f.UNIT_Z);
+                Vector3f bulletVelocity = new Vector3f(-7, 0 , 0);
+                quat.mult(bulletVelocity, bulletVelocity);
+
+                b.setVelocity(bulletVelocity);
+                rootNode.attachChild(geom);
+                bullets.put(bulletID, b);
+            }
+        }
     }
     
     public void removeBullet(int bullet_id)

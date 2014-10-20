@@ -158,6 +158,10 @@ public class ClientMain extends SimpleApplication {
 //        initCrossHairs();
     }
     
+    /**
+     * Initialises the HUD components
+     * 
+     */
     public void initHUD()
     {
         lifeText = new BitmapText(guiFont, false);
@@ -168,6 +172,10 @@ public class ClientMain extends SimpleApplication {
         guiNode.attachChild(lifeText);
     }
     
+    /**
+     * Initialises the world node with buildings
+     * 
+     */
     public void initWorld()
     {
         this.world = new Node();
@@ -223,7 +231,12 @@ public class ClientMain extends SimpleApplication {
 //        ch.setLocalTranslation(relativePos);
 //        guiNode.attachChild(ch);
 //    }
-       
+    
+    /**
+     * Creates a new player and puts it in the players hashmap
+     * 
+     * @param id 
+     */
     public void addPlayer(int id)
     {
         String idStr = "Player " + Integer.toString(id);
@@ -239,29 +252,29 @@ public class ClientMain extends SimpleApplication {
         
     }
     
+    /**
+     * Checks if a player exists
+     * 
+     * @param id
+     * @return true if player exists
+     */
     public boolean playerExists(int id)
     {
         return players.containsKey(id);
     }
     
-    public void updatePlayer(int id, Vector3f position, Quaternion rotation, boolean alive, int life, int currentVehicleID)
-    {
-        Player player = players.get(id);
-        
-        player.setPosition(position);
-        player.setRotation(rotation);
-        player.setAlive(alive);
-        player.setLife(life);
-        player.setCurrentVehicleID(currentVehicleID);
-        
-    }
+//    // TODO: update function
+//    public void removePlayer(int id)
+//    {
+//        //players.remove(id).getSprite().delete();
+//    }
     
-    // TODO: update function
-    public void removePlayer(int id)
-    {
-        //players.remove(id).getSprite().delete();
-    }
-    
+    /**
+     * Adds a new bullet owned by a certain player
+     * 
+     * @param owner_id
+     * @param bullet_id 
+     */
     public void addBullet(int owner_id, int bullet_id)
     {
         String idStr = "Bullet " + bullet_id +" of player " + owner_id;
@@ -278,6 +291,12 @@ public class ClientMain extends SimpleApplication {
         bullets.put(bullet_id, b);
     }
     
+    /**
+     * Adds a car at a certain position
+     * 
+     * @param id
+     * @param position
+     */
     public void addCar(int id, Vector3f position)
     {
         String idStr = "Car " + id;
@@ -323,11 +342,12 @@ public class ClientMain extends SimpleApplication {
     }
     
     public void updateEntity(String updateMessage)
-    {
+    {   
         String[] split = updateMessage.split("&");
         
         if(split[0].equals("Player"))
         {
+            // Retrieve Player info
             int id = Integer.parseInt(split[1]);
             String[] posSplit = split[2].replace("(", "").replace(")", "").split(",");
             Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
@@ -341,13 +361,24 @@ public class ClientMain extends SimpleApplication {
             boolean alive = Boolean.parseBoolean(split[4]);
             int life = Integer.parseInt(split[5]);
             int currentVehicleID = Integer.parseInt(split[6]);
+            long lastAttackTime = Long.parseLong(split[7]);
+            Weapon weapon = Weapon.valueOf(split[8]);
             
+            // Add player if it doesn't exist
             if(!playerExists(id))
             {
                 addPlayer(id);
             }
             
-            updatePlayer(id, position, rotation, alive, life, currentVehicleID);
+            Player p = players.get(id);
+        
+            p.setPosition(position);
+            p.setRotation(rotation);
+            p.setAlive(alive);
+            p.setLife(life);
+            p.setCurrentVehicleID(currentVehicleID);
+            p.setLastAttackTime(lastAttackTime);
+            p.setWeapon(weapon);
         }
         else if(split[0].equals("Bullet"))
         {

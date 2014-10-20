@@ -113,7 +113,7 @@ implements MessageListener<HostedConnection>
             }
             if(cmdMessage.getCommand().equals(ClientCommand.SHOOT))
             {
-                app.addBullet(p.getID());
+                app.shoot(p.getID());
             }
             if(cmdMessage.getCommand().equals(ClientCommand.INTERACT))
             {
