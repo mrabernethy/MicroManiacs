@@ -23,6 +23,7 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.system.AppSettings;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
 import entities.Bullet;
@@ -40,8 +41,14 @@ public class ClientMain extends SimpleApplication {
     
     public static void main(String[] args) {
         java.util.logging.Logger.getLogger("").setLevel(Level.SEVERE);
+        // Change the default settings
+        AppSettings settings = new AppSettings(true);
+        settings.setResolution(1024,768);
+        settings.setTitle("Micro Maniacs");
+        settings.setSettingsDialogImage("Interface/splash.png");
         ClientMain app = new ClientMain();
-        app.start(JmeContext.Type.Display);
+        app.setSettings(settings);
+        app.start();//JmeContext.Type.Display);
     }
   
     /** Prepare geometries and physical nodes*/
@@ -126,18 +133,19 @@ public class ClientMain extends SimpleApplication {
         inputManager.addListener(analogListener, new String[]{MAPPING_UP, MAPPING_DOWN, 
             MAPPING_LEFT, MAPPING_RIGHT});
         
+        // Stop the client pausing the game
+        setPauseOnLostFocus(false);
+        // Hide FPS value
+        setDisplayFps(false);
+        // Hide debugging stats
+        setDisplayStatView(false);
+        
         // Set cursor visible
         inputManager.setCursorVisible(true);
-//        JmeCursor c = new JmeCursor();
-//        IntBuffer image = new IntBuffer
-//        inputManager.setMouseCursor(JmeCursor.class.);
         
         // Message to send to the server.
         myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
-        
-        // TODO: attach the world
-        //attachBackground();
-        
+                
         // Add player
         addPlayer(myClient.getId());
         player = (players.get(myClient.getId()));
@@ -167,7 +175,7 @@ public class ClientMain extends SimpleApplication {
         lifeText = new BitmapText(guiFont, false);
         lifeText.setSize(guiFont.getCharSet().getRenderedSize());
         lifeText.setColor(ColorRGBA.Red);
-        lifeText.setLocalTranslation(0,470,0);
+        lifeText.setLocalTranslation(0,768,0);
         lifeText.setText("Life:");
         guiNode.attachChild(lifeText);
     }
