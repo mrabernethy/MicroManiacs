@@ -18,6 +18,7 @@ import com.jme3.math.Vector3f;
 import com.jme3.network.Client;
 import com.jme3.network.Network;
 import com.jme3.network.serializing.Serializer;
+import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -26,23 +27,30 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import com.jme3.system.JmeContext;
 import com.jme3.texture.Texture;
+import de.lessvoid.nifty.Nifty;
+import de.lessvoid.nifty.controls.textfield.TextFieldControl;
+import de.lessvoid.nifty.elements.render.TextRenderer;
+import de.lessvoid.nifty.screen.Screen;
+import de.lessvoid.nifty.screen.ScreenController;
 import entities.Bullet;
 import entities.Car;
 import entities.Player;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Mike
  */
-public class ClientMain extends SimpleApplication {
+public class ClientMain extends SimpleApplication implements ScreenController{
     
     public static void main(String[] args) {
         java.util.logging.Logger.getLogger("").setLevel(Level.SEVERE);
         // Change the default settings
         AppSettings settings = new AppSettings(true);
+        
         settings.setResolution(1024,768);
         settings.setTitle("Micro Maniacs");
         settings.setSettingsDialogImage("Interface/splash.png");
@@ -55,6 +63,10 @@ public class ClientMain extends SimpleApplication {
     private Node world;
     
     private Client myClient;
+    private GameState gamestate = GameState.STARTING;
+    private Nifty nifty;
+    private NiftyJmeDisplay niftyDisplay;
+    private TextRenderer statusText;
  
     private Vector3f topY;
     private Vector3f bottomY;
@@ -93,28 +105,35 @@ public class ClientMain extends SimpleApplication {
     
     @Override
     public void simpleInitApp() 
-    { 
+    {
+        startNifty();
+        
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
         Serializer.registerClass(ClientCommandMessage.class); 
         
-        try {
-            myClient = Network.connectToServer (Globals.NAME,
-                    Globals.VERSION, Globals.DEFAULT_SERVER, 
-                    Globals.DEFAULT_PORT);
-            myClient.start();
-        } catch (IOException ex) {}
+        myClient = Network.createClient();
         
+        // Set cursor visible
+        inputManager.setCursorVisible(true);
+        
+//        try {
+//            myClient = Network.connectToServer (Globals.NAME,
+//                    Globals.VERSION, Globals.DEFAULT_SERVER, 
+//                    Globals.DEFAULT_PORT);
+//            myClient.start();
+//        } catch (IOException ex) {}
+//        
         // Register the message classes
         
-        // Add the message listeners
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                GreetingMessage.class);
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                UpdateMessage.class);
-        myClient.addMessageListener(new ClientListener(this, myClient),
-                ClientCommandMessage.class);
-        //myClient.addClientStateListener(this);
+//        // Add the message listeners
+//        myClient.addMessageListener(new ClientListener(this, myClient),
+//                GreetingMessage.class);
+//        myClient.addMessageListener(new ClientListener(this, myClient),
+//                UpdateMessage.class);
+//        myClient.addMessageListener(new ClientListener(this, myClient),
+//                ClientCommandMessage.class);
+//        //myClient.addClientStateListener(this);
         
         // Init Mappings and Listeners
         inputManager.addMapping(MAPPING_UP, TRIGGER_W, TRIGGER_UP);
@@ -136,16 +155,97 @@ public class ClientMain extends SimpleApplication {
         // Stop the client pausing the game
         setPauseOnLostFocus(false);
         // Hide FPS value
-        setDisplayFps(false);
+        //setDisplayFps(false);
         // Hide debugging stats
-        setDisplayStatView(false);
+        //setDisplayStatView(false);
         
-        // Set cursor visible
-        inputManager.setCursorVisible(true);
         
-        // Message to send to the server.
-        myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
+        
+//        // Message to send to the server.
+//        myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
                 
+//        // Add player
+//        addPlayer(myClient.getId());
+//        player = (players.get(myClient.getId()));
+//        myClient.send(new ClientCommandMessage(ClientCommand.ADD_PLAYER, player.getRotation(), myClient.getId()));
+//        
+//        // Stop the camera moving
+//        this.flyCam.setEnabled(false);
+//        
+//        // Attach the chase cam to the player
+//        chaseCamera = new ChaseCamera(cam);
+//        chaseCamera.setDefaultHorizontalRotation(FastMath.PI/2);
+//        chaseCamera.setDefaultVerticalRotation(0);
+//        player.getGeometry().addControl(chaseCamera);
+//        
+//        /** Initialize the scene*/
+//        initHUD();
+//        initWorld();
+//        initCrossHairs();
+    }
+    
+    
+    /**
+     * starts the nifty gui system
+     */
+    private void startNifty() {
+        guiNode.detachAllChildren();
+        guiNode.attachChild(fpsText);
+        niftyDisplay = new NiftyJmeDisplay(assetManager,
+                inputManager,
+                audioRenderer,
+                guiViewPort);
+        nifty = niftyDisplay.getNifty();
+        try {
+            nifty.fromXml("Interface/ClientUI.xml", "load_game", this);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        statusText = nifty.getScreen("load_game").findElementByName("layer").findElementByName("panel").findElementByName("status_text").getRenderer(TextRenderer.class);
+        guiViewPort.addProcessor(niftyDisplay);
+        
+    }
+    
+    /**
+    * connect to server (called from gui)
+    */
+    public void connect() {
+       
+       //TODO: not connect when already trying..
+       final String ipaddress = nifty.getScreen("load_game").findElementByName("layer").findElementByName("panel").findElementByName("ipaddress_text").getControl(TextFieldControl.class).getText();
+        System.out.println(ipaddress);
+       Globals.DEFAULT_SERVER = ipaddress;
+       // Check for invalid entry
+//       if (ipaddress.trim().length() == 0) {
+//           setStatusText("Username invalid");
+//           return;
+//       }
+//       listenerManager.setName(userName);
+       
+       
+       statusText.setText("Connecting..");
+       try {
+           myClient = Network.connectToServer(Globals.NAME, Globals.VERSION, 
+                   Globals.DEFAULT_SERVER, Globals.DEFAULT_PORT);
+           myClient.start();
+       } catch (IOException ex) {
+           statusText.setText(ex.getMessage());
+           //setStatusText(ex.getMessage());
+           Logger.getLogger(ClientMain.class.getName()).log(Level.SEVERE, null, ex);
+       }
+       
+       // Add the message listeners
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                GreetingMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                UpdateMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                ClientCommandMessage.class);
+        //myClient.addClientStateListener(this);
+       
+       // Message to send to the server.
+        myClient.send(new GreetingMessage("Hi Server! Do you hear me?"));
+        
         // Add player
         addPlayer(myClient.getId());
         player = (players.get(myClient.getId()));
@@ -163,8 +263,11 @@ public class ClientMain extends SimpleApplication {
         /** Initialize the scene*/
         initHUD();
         initWorld();
-//        initCrossHairs();
-    }
+        
+        gamestate = GameState.RUNNING;
+        nifty.removeScreen("load_game");
+   }
+    
     
     /**
      * Initialises the HUD components
@@ -453,32 +556,35 @@ public class ClientMain extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-        //TODO: add update code
-        // TODO: update players?
-        // Update players
-        //myClient.send(new ClientCommandMessage(ClientCommand.ROTATE,player.getRotation(), myClient.getId()));
-        // Update HUD
-        lifeText.setText("Life: " + player.getLife());
         
-        
-        // Rotate box to look at mouse cursor
-        Vector2f mousePos = inputManager.getCursorPosition();
-        Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
-        Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
-        float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
-        Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
-        player.setRotation(playerRotation);
-        
-        //collisionWithWall();
-        // Send this players position every x movement distance
-//        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
-//        {
-//            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
-//            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
-//        }
-            
-//            initCrossHairs();
-      
+        if (gamestate== GameState.RUNNING)
+        {
+            //TODO: add update code
+            // TODO: update players?
+            // Update players
+            //myClient.send(new ClientCommandMessage(ClientCommand.ROTATE,player.getRotation(), myClient.getId()));
+            // Update HUD
+            lifeText.setText("Life: " + player.getLife());
+
+
+            // Rotate box to look at mouse cursor
+            Vector2f mousePos = inputManager.getCursorPosition();
+            Vector3f rotPos = new Vector3f(cam.getScreenCoordinates(player.getGeometry().getLocalTranslation()));
+            Vector2f relativePos = new Vector2f(mousePos.x-rotPos.x,mousePos.y-rotPos.y);
+            float angleRads = FastMath.atan2(relativePos.y, relativePos.x);
+            Quaternion playerRotation = new Quaternion().fromAngles( 0, 0, angleRads );
+            player.setRotation(playerRotation);
+
+            //collisionWithWall();
+            // Send this players position every x movement distance
+    //        if(players.get(myClient.getId()).getPosition().distance(lastSentPosition) > 0.05)
+    //        {
+    //            lastSentPosition = new Vector3f(players.get(myClient.getId()).getPosition());
+    //            myClient.send(new ClientMessage(player.getPosition(), player.getRotation(), myClient.getId()));
+    //        }
+
+    //            initCrossHairs();
+        }
     }
 
     @Override
@@ -555,5 +661,17 @@ public class ClientMain extends SimpleApplication {
             }
         }
     };
+
+    public void bind(Nifty nifty, Screen screen) {
+        
+    }
+
+    public void onStartScreen() {
+        
+    }
+
+    public void onEndScreen() {
+        
+    }
 
 }
