@@ -599,7 +599,9 @@ public class ClientMain extends SimpleApplication implements ScreenController{
             myClient.close();
             
             System.out.println("Client Closed");
-        } catch (Exception ex) {}
+        } catch (Exception ex) {
+            Logger.getLogger(ClientMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
         super.destroy();
     }
 
