@@ -51,5 +51,19 @@ implements MessageListener<Client>
                 }
             });
         }
+        
+        if (message instanceof GameStateMessage)
+        {
+            final GameStateMessage gameStateMessage = (GameStateMessage) message;
+            
+            app.enqueue(new Callable(){
+                public Void call()
+                {
+                    app.setGameState(gameStateMessage.getGameState());
+                    
+                    return null;
+                }
+            });
+        }
     }
 }

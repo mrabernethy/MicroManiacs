@@ -110,7 +110,8 @@ public class ClientMain extends SimpleApplication implements ScreenController{
         
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
-        Serializer.registerClass(ClientCommandMessage.class); 
+        Serializer.registerClass(ClientCommandMessage.class);
+        Serializer.registerClass(GameStateMessage.class);
         
         myClient = Network.createClient();
         
@@ -241,6 +242,8 @@ public class ClientMain extends SimpleApplication implements ScreenController{
                 UpdateMessage.class);
         myClient.addMessageListener(new ClientListener(this, myClient),
                 ClientCommandMessage.class);
+        myClient.addMessageListener(new ClientListener(this, myClient),
+                GameStateMessage.class);
         //myClient.addClientStateListener(this);
        
        // Message to send to the server.
@@ -418,6 +421,7 @@ public class ClientMain extends SimpleApplication implements ScreenController{
         geom.setMaterial(mat);
         
         Car c = new Car(position, geom, id);
+        System.out.println(position.x +" "+position.y);
         rootNode.attachChild(geom);
         cars.put(id, c);
     }
@@ -454,81 +458,85 @@ public class ClientMain extends SimpleApplication implements ScreenController{
     
     public void updateEntity(String updateMessage)
     {   
-        String[] split = updateMessage.split("&");
-        
-        if(split[0].equals("Player"))
+        if (gamestate==GameState.RUNNING)
         {
-            // Retrieve Player info
-            int id = Integer.parseInt(split[1]);
-            String[] posSplit = split[2].replace("(", "").replace(")", "").split(",");
-            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
-                                                Float.parseFloat(posSplit[1].trim()),
-                                                Float.parseFloat(posSplit[2].trim()));
-            String[] rotSplit = split[3].replace("(", "").replace(")", "").split(",");
-            Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
-                                                    Float.parseFloat(rotSplit[1].trim()),
-                                                    Float.parseFloat(rotSplit[2].trim()),
-                                                    Float.parseFloat(rotSplit[3].trim()));
-            boolean alive = Boolean.parseBoolean(split[4]);
-            int life = Integer.parseInt(split[5]);
-            int currentVehicleID = Integer.parseInt(split[6]);
-            long lastAttackTime = Long.parseLong(split[7]);
-            Weapon weapon = Weapon.valueOf(split[8]);
-            
-            // Add player if it doesn't exist
-            if(!playerExists(id))
+            String[] split = updateMessage.split("&");
+
+            if(split[0].equals("Player"))
             {
-                addPlayer(id);
+                // Retrieve Player info
+                int id = Integer.parseInt(split[1]);
+                String[] posSplit = split[2].replace("(", "").replace(")", "").split(",");
+                Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                    Float.parseFloat(posSplit[1].trim()),
+                                                    Float.parseFloat(posSplit[2].trim()));
+                String[] rotSplit = split[3].replace("(", "").replace(")", "").split(",");
+                Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
+                                                        Float.parseFloat(rotSplit[1].trim()),
+                                                        Float.parseFloat(rotSplit[2].trim()),
+                                                        Float.parseFloat(rotSplit[3].trim()));
+                boolean alive = Boolean.parseBoolean(split[4]);
+                int life = Integer.parseInt(split[5]);
+                int currentVehicleID = Integer.parseInt(split[6]);
+                long lastAttackTime = Long.parseLong(split[7]);
+                Weapon weapon = Weapon.valueOf(split[8]);
+
+                // Add player if it doesn't exist
+                if(!playerExists(id))
+                {
+                    addPlayer(id);
+                }
+
+                Player p = players.get(id);
+
+                p.setPosition(position);
+                p.setRotation(rotation);
+                p.setAlive(alive);
+                p.setLife(life);
+                p.setCurrentVehicleID(currentVehicleID);
+                p.setLastAttackTime(lastAttackTime);
+                p.setWeapon(weapon);
             }
-            
-            Player p = players.get(id);
-        
-            p.setPosition(position);
-            p.setRotation(rotation);
-            p.setAlive(alive);
-            p.setLife(life);
-            p.setCurrentVehicleID(currentVehicleID);
-            p.setLastAttackTime(lastAttackTime);
-            p.setWeapon(weapon);
-        }
-        else if(split[0].equals("Bullet"))
-        {
-            int id = Integer.parseInt(split[1]);
-            int ownerID = Integer.parseInt(split[2]);
-            String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
-            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
-                                                Float.parseFloat(posSplit[1].trim()),
-                                                Float.parseFloat(posSplit[2].trim()));
-            boolean alive = Boolean.parseBoolean(split[4]);
-            
-            if(!bulletExists(id))
+            else if(split[0].equals("Bullet"))
             {
-                addBullet(ownerID, id);
+                int id = Integer.parseInt(split[1]);
+                int ownerID = Integer.parseInt(split[2]);
+                String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
+                Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                    Float.parseFloat(posSplit[1].trim()),
+                                                    Float.parseFloat(posSplit[2].trim()));
+                boolean alive = Boolean.parseBoolean(split[4]);
+
+                if(!bulletExists(id))
+                {
+                    addBullet(ownerID, id);
+                }
+
+                updateBullet(id, position, alive);
             }
-            
-            updateBullet(id, position, alive);
-        }
-        else if(split[0].equals("Car"))
-        {
-            int id = Integer.parseInt(split[1]);
-            int riderID = Integer.parseInt(split[2]);
-            String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
-            Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
-                                                Float.parseFloat(posSplit[1].trim()),
-                                                Float.parseFloat(posSplit[2].trim()));
-            String[] rotSplit = split[4].replace("(", "").replace(")", "").split(",");
-            Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
-                                                    Float.parseFloat(rotSplit[1].trim()),
-                                                    Float.parseFloat(rotSplit[2].trim()),
-                                                    Float.parseFloat(rotSplit[3].trim()));
-            boolean alive = Boolean.parseBoolean(split[5]);
-            
-            if(!carExists(id))
+            else if(split[0].equals("Car"))
             {
-                addCar(id, position);
+                int id = Integer.parseInt(split[1]);
+                int riderID = Integer.parseInt(split[2]);
+                String[] posSplit = split[3].replace("(", "").replace(")", "").split(",");
+                Vector3f position = new Vector3f(   Float.parseFloat(posSplit[0].trim()),
+                                                    Float.parseFloat(posSplit[1].trim()),
+                                                    Float.parseFloat(posSplit[2].trim()));
+                String[] rotSplit = split[4].replace("(", "").replace(")", "").split(",");
+                Quaternion rotation = new Quaternion(   Float.parseFloat(rotSplit[0].trim()),
+                                                        Float.parseFloat(rotSplit[1].trim()),
+                                                        Float.parseFloat(rotSplit[2].trim()),
+                                                        Float.parseFloat(rotSplit[3].trim()));
+                boolean alive = Boolean.parseBoolean(split[5]);
+
+                if(!carExists(id))
+                {
+                    System.out.println("adding car");
+                    addCar(id, position);
+                }
+
+                updateCar(id, position, rotation, riderID, alive);
             }
-            
-            updateCar(id, position, rotation, riderID, alive);
         }
     }
     
@@ -557,7 +565,7 @@ public class ClientMain extends SimpleApplication implements ScreenController{
     @Override
     public void simpleUpdate(float tpf) {
         
-        if (gamestate== GameState.RUNNING)
+        if (gamestate==GameState.RUNNING)
         {
             //TODO: add update code
             // TODO: update players?
@@ -585,6 +593,7 @@ public class ClientMain extends SimpleApplication implements ScreenController{
 
     //            initCrossHairs();
         }
+        
     }
 
     @Override
@@ -655,6 +664,7 @@ public class ClientMain extends SimpleApplication implements ScreenController{
                 if(name.equals(MAPPING_SHOOT) && keyPressed)
                 {
                     myClient.send(new ClientCommandMessage(ClientCommand.SHOOT, player.getRotation(), myClient.getId()));
+                    //gamestate= GameState.GAMEOVER;
                 }
                 if(name.equals(MAPPING_INTERACT) && keyPressed)
                 {
@@ -663,6 +673,41 @@ public class ClientMain extends SimpleApplication implements ScreenController{
             }
         }
     };
+    
+    public void setGameState(GameState state)
+    {
+        this.gamestate = state;
+        
+        if (gamestate==GameState.GAMEOVER)
+        {
+            String screenStr;
+            // TODO: add check for winner and looser
+            if (true)
+            {
+                screenStr = "game_over";
+            }
+            else
+            {
+                screenStr = "game_won";
+            }
+            
+            try {
+                nifty.fromXml("Interface/ClientUI.xml", screenStr, this);
+                //destroy();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+//        else if (gamestate==GameState.WON)
+//        {
+//            try {
+//                nifty.fromXml("Interface/ClientUI.xml", "game_won", this);
+//                //destroy();
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        }
+    }
 
     public void bind(Nifty nifty, Screen screen) {
         

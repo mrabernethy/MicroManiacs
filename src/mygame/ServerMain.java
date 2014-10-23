@@ -62,7 +62,8 @@ public class ServerMain extends SimpleApplication {
         
         Serializer.registerClass(UpdateMessage.class);
         Serializer.registerClass(GreetingMessage.class); 
-        Serializer.registerClass(ClientCommandMessage.class); 
+        Serializer.registerClass(ClientCommandMessage.class);
+        Serializer.registerClass(GameStateMessage.class);
         
         try {
             myServer = Network.createServer
@@ -79,6 +80,8 @@ public class ServerMain extends SimpleApplication {
                 UpdateMessage.class);
         myServer.addMessageListener(new ServerListener(this, myServer),
                 ClientCommandMessage.class);
+        myServer.addMessageListener(new ServerListener(this, myServer),
+                GameStateMessage.class);
         
         initWorld();
         initCars();
@@ -297,6 +300,8 @@ public class ServerMain extends SimpleApplication {
                 // Player - Player Collisions
                 for(Player p2 : players.values())
                 {
+                    
+                    
                     CollisionResults results = new CollisionResults();
                     
                     if(!p.equals(p2))
@@ -306,8 +311,11 @@ public class ServerMain extends SimpleApplication {
                     
                     if(results.size() > 0)
                     {
+                        myServer.broadcast(new GameStateMessage(GameState.GAMEOVER));
+                        destroy();
+                        
                         //collision = true;
-                        p.setVelocity(p.getVelocity().negate());
+//                        p.setVelocity(p.getVelocity().negate());
                     }
                 }
                 
@@ -445,6 +453,8 @@ public class ServerMain extends SimpleApplication {
                 c.update(0.03f);
                 if(c.hasRider())
                 {
+                    
+                    
                     players.get(c.getRiderID()).setPosition(c.getPosition());
                     c.setRotation(players.get(c.getRiderID()).getRotation());
                     myServer.broadcast(new UpdateMessage(players.get(c.getRiderID()).toString()));
